@@ -133,8 +133,15 @@ off from **Git → Inline Blame**.
 The button beside **EXPLORER** at the top of the sidebar (⌃⇧G) switches it to the changes of the folder's Git work
 tree, with a count of them. Files are grouped as merge changes, staged changes, changes and untracked files.
 
-- The branch at the top opens **Switch Branch…**. Beside it, fetch, pull and push, which show how many commits
-  they would bring down or send up; a branch with no upstream gets **Publish Branch** instead.
+- The branch at the top opens **Switch Branch…**. Its local branches come first, then those of the remotes, and each
+  row shows who made its last commit, how long ago, and its subject. Beside it, fetch, pull and push, which show how
+  many commits they would bring down or send up; a branch with no upstream gets **Publish Branch** instead.
+- The folder and the branch at the left of the title bar, shown as `folder / branch`, open **Switch Worktree…** and the
+  branch picker. The folder names a linked worktree; the main one shows its icon alone. Narrow windows shorten the names
+  first. **Switch Worktree…** lists the work tree's checkouts, the one open first, by folder, branch and path. Choosing
+  one opens its folder in the window. Typing a new branch name offers **Create Worktree**, which makes the checkout beside
+  the main one, in `<folder>.worktrees`, from the commit HEAD is at.
+  A folder that has gone missing is reported, not pruned.
 - Click a file, or press Enter, to see its changes with the diff focused, so its keys (`]` `[`, `.` `,`) work at once.
   Shift-click or Shift+Up/Down selects a range of files, ⌘-click (Ctrl-click on Windows and Linux) adds or removes one,
   and ⌘A selects them all. Space, and a selected row's stage, unstage and discard buttons and menu items, act on all the
@@ -335,11 +342,11 @@ Branch rows offer checkout and pull; a remote branch's **Fetch Remote** fetches 
 branch creation, rename, deletion, merge and rebase, and remote creation, URL editing, removal, fetch and prune.
 Deletion refuses unmerged branches. **Refresh** rereads local refs; **Fetch** contacts the remote.
 
-Click the branch in the status bar to open the same branch picker as source control. The sync button alongside it
-shows how far the branch is ahead of its upstream (↑) and behind it (↓), and pulls then pushes in one click; a branch
+Click the branch at the left of the title bar, after the folder, to open the same branch picker as source control. The
+sync button in the status bar shows how far the branch is ahead of its upstream (↑) and behind it (↓), and pulls then pushes in one click; a branch
 without an upstream has a publish button instead. Switching waits until open files are saved.
 
-**Switch Branch…**, from the branch at the top of source control, the status bar or the **Git** menu, opens a box
+**Switch Branch…**, from the branch at the top of source control, the title bar or the **Git** menu, opens a box
 of the branches, local and of the remotes, the one checked out first and then the one committed to last. Each shows the
 subject of its last commit and how long ago it was made. Type to find one by name, or type a new name to create a branch
 from the one checked out. **Create Branch…** at the top of the unfiltered list opens a name prompt. With matching

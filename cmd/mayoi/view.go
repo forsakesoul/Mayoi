@@ -164,6 +164,7 @@ func (a *app) view(c *ui.Context) {
 	})
 	a.quickOpenView(c)
 	a.branchPickerView(c)
+	a.worktreePickerView(c)
 	a.repositoryPickerView(c)
 	a.recentPickerView(c)
 	a.themePickerView(c)
@@ -373,7 +374,19 @@ func (a *app) titleBar(c *ui.Context) {
 				a.togglePanel()
 			}
 		}
-		ui.Row(c).Basis(0).Grow(1).MinWidth(56).Gap(2).Children(func() {
+		// The left group's least width keeps what it draws inside it, so that
+		// the command center yields rather than being covered: its buttons, the
+		// menu off macOS among them, and the git buttons when there is a work
+		// tree. The 56 is two buttons' width, which the right group keeps too,
+		// so the command center stays off-center only as far as the sides match.
+		leftMin := float32(56)
+		if n := btoi(hostOS != "darwin") + btoi(panelLeft) + btoi(!right); n > 0 {
+			leftMin = max(leftMin, float32(n)*titleButtonSlot)
+		}
+		if a.repository().git.repo != nil {
+			leftMin += titleGitMinW
+		}
+		ui.Row(c).Basis(0).Grow(1).MinWidth(leftMin).Gap(2).Children(func() {
 			if hostOS != "darwin" {
 				a.iconButton(c, iconMenu, locales.Menu(), false).Menu(a.appUIMenu)
 			}
@@ -383,6 +396,7 @@ func (a *app) titleBar(c *ui.Context) {
 			if !right {
 				sidebarButton()
 			}
+			a.titleGit(c)
 		})
 		ui.Row(c).Width(420).MaxWidthPercent(68).Shrink(1).MinWidth(140).Justify(ui.Center).AlignItems(ui.Center).Children(func() {
 			a.commandCenter(c)
@@ -395,6 +409,63 @@ func (a *app) titleBar(c *ui.Context) {
 				sidebarButton()
 			}
 		})
+	})
+}
+
+// titleGitMinW is the least width of the title bar's git buttons: their
+// icons and padding, with the names shrunk away.
+const titleGitMinW = 80
+
+// titleButtonSlot is the width a title bar button takes with its gap: 26
+// wide, and 2 apart.
+const titleButtonSlot = 28
+
+// titleButtonMinW is the least width of a git button: its icon, with the
+// padding and the gap after it.
+const titleButtonMinW = 29
+
+// titleGit is the worktree and the branch of the work tree at the left of
+// the title bar, as "folder / branch": each opens its box. The worktree
+// names its folder when it is a linked one, and the branch shows when
+// there is one. Narrow, the names shrink first, to the icons, which keep
+// their place beside the command center.
+func (a *app) titleGit(c *ui.Context) {
+	p := a.pal
+	repo := a.repository()
+	if repo.git.repo == nil {
+		return
+	}
+	g := repo.git
+	button := func(key string, icon *ui.SVG, label, tip, text string, open func()) {
+		// Its name shrinks first; its icon and padding, titleButtonMinW, stay.
+		b := ui.ButtonBase(c.Key(key)).Height(24).Padding(0, 6).Gap(5).Radius(5).Shrink(1).MinWidth(titleButtonMinW).
+			AlignItems(ui.Center).Label(label).Tooltip(tip).Disabled(g.busy != "")
+		if b.Hovered() {
+			b.Background(p.hover)
+		}
+		b.Transition(hoverFade)
+		b.Children(func() {
+			ui.Icon(c, icon).FontSize(12).TextColor(p.muted)
+			if text != "" {
+				ui.Text(c, text).FontSize(12).TextColor(p.text).SingleLine().Shrink(1).MinWidth(0)
+			}
+		})
+		if b.Clicked() {
+			open()
+		}
+	}
+	name := filepath.Base(g.repo.Root)
+	linked := ""
+	if g.repo.Dir != g.repo.Common {
+		linked = name
+	}
+	ui.Row(c).Shrink(1).MinWidth(0).Gap(2).AlignItems(ui.Center).Children(func() {
+		tip := locales.WorktreeStatusTip(name)
+		button("title:worktree", iconFolderGit, tip, tip, linked, repo.openWorktreePicker)
+		if b := repo.branch(); b != "" {
+			ui.Text(c, "/").FontSize(12).TextColor(p.faint).Padding(0, 2)
+			button("title:branch", iconBranch, locales.BranchLabel(b), locales.BranchStatusTip(b), b, repo.openBranchPicker)
+		}
 	})
 }
 
@@ -880,7 +951,6 @@ func (a *app) previewButton(c *ui.Context, t *colTab, d *editor) {
 // statusVisibility is which of the parts of the status bar that can go
 // show.
 type statusVisibility struct {
-	branchLabel   bool
 	gitSyncCounts bool
 	folder        bool
 	terminal      bool
@@ -999,10 +1069,6 @@ func (a *app) statusFit(c *ui.Context, width float32) statusVisibility {
 		if label := repo.gitSyncLabel(); label != "" {
 			add(&v.gitSyncCounts, measure(label, false)-2*6-2+5)
 		}
-	}
-	if a.branch() != "" {
-		used += 2*6 + 12 + 2 // its icon, which stays
-		add(&v.branchLabel, measure(a.branch(), false)-2*6-2+5)
 	}
 	for _, p := range parts {
 		*p.on = true
@@ -1155,24 +1221,6 @@ func (a *app) statusBar(c *ui.Context) {
 		}
 		a.remoteStatus(c, text)
 		a.portsStatus(c, text)
-		if b := repo.branch(); b != "" {
-			bb := ui.ButtonBase(c.Key("status:branch")).Height(statusBarH-6).Padding(0, 6).Gap(5).Radius(4).
-				AlignItems(ui.Center).Label(locales.BranchLabel(b)).Tooltip(locales.BranchStatusTip(b)).Disabled(repo.git.busy != "")
-			if bb.Hovered() {
-				bb.Background(p.hover)
-			}
-			bb.Transition(hoverFade)
-			bb.Children(func() {
-				ui.Icon(c, iconBranch).FontSize(12).TextColor(p.statusFg)
-				if visible.branchLabel {
-					// Switched to another, the name rolls to it.
-					text(b).ContentTransition(ui.ContentTransition{})
-				}
-			})
-			if bb.Clicked() {
-				repo.openBranchPicker()
-			}
-		}
 		repo.gitSyncStatus(c, visible.gitSyncCounts)
 		a.transferStatus(c, text)
 		if busy := repo.git.busy; busy != "" {

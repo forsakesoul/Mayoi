@@ -42,18 +42,38 @@ func TestGitSyncStatusBar(t *testing.T) {
 		hs.shotRect(name, image.Rect(0, 716, 1200, 760), 1)
 	}
 	a.openFile(hs.path("main.go"), false)
-	// Force the counts to give way even with a platform's narrower font.
+	// A long branch name is in the title bar, where it shrinks: it must
+	// stay on the window and be there at all.
 	run("branch", "-m", strings.Repeat("W", 64))
 	tt.SetSize(300, 300)
 	hs.settleGit()
 	if b, ok := tt.Find(locales.GitSync()); !ok || b.X < 0 || b.X+b.W > 300 || b.Y+b.H > 300 {
 		t.Fatalf("narrow sync button is clipped: %v %v", b, ok)
 	}
-	if tt.HasText("0↓ 8↑") {
-		t.Fatal("sync counts did not yield space in the narrow status bar")
+	if b, ok := tt.Find(locales.BranchLabel(ctx.branch())); !ok || b.X < 0 || b.X+b.W > 300 || b.Y >= titleBarH {
+		t.Fatalf("narrow title bar branch is missing or clipped: %v %v", b, ok)
 	}
 	if b, ok := tt.Find(locales.StatusPos(1, 1)); !ok || b.X < 0 || b.X+b.W > 300 {
 		t.Fatalf("narrow caret position is clipped: %v %v", b, ok)
+	}
+	// Counts too long for a narrow status bar give way, and the sync button
+	// stays: the width, not the branch, decides it.
+	run("branch", "-m", "feature_T12436745")
+	hs.settleGit()
+	ctx.git.status.Ahead = 1234567890123456789
+	const long = "0↓ 1234567890123456789↑"
+	tt.SetSize(1200, 760)
+	hs.settle()
+	if !tt.HasText(long) {
+		t.Fatal("wide status bar does not show the long counts")
+	}
+	tt.SetSize(200, 300)
+	hs.settle()
+	if tt.HasText(long) {
+		t.Fatal("long counts did not give way in the narrow status bar")
+	}
+	if b, ok := tt.Find(locales.GitSync()); !ok || b.X < 0 || b.X+b.W > 200 {
+		t.Fatalf("sync button lost with its counts: %v %v", b, ok)
 	}
 	hs.shot("git-sync-narrow")
 	run("branch", "-m", "feature_T12436745")

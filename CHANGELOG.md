@@ -6,6 +6,10 @@ needs a `## <version>` section here, or its build fails.
 ## Unreleased
 
 - When an update check fails, the update window shows the whole error, with no tooltip over it.
+- The title bar's folder button opens **Switch Worktree…** to change to another checkout.
+- The branch button moved from the status bar to the title bar, after the folder.
+- Typing a new name in **Switch Worktree…** makes a worktree on a new branch beside the main one.
+- **Switch Branch…** lists local branches first, with each branch's last author and time.
 
 ## 0.13.0
 

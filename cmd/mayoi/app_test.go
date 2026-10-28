@@ -262,7 +262,8 @@ func TestStatusBarDropsTheLeastNeededFirst(t *testing.T) {
 	hs.a.openFile(hs.path("main.go"), true)
 	hs.settleGit()
 	// In the order they go.
-	parts := []string{"UTF-8", revealFolderLabel(shortenHome(hs.root)), "9 lines", "LF", "Tabs", "Go", branch}
+	// The branch is in the title bar now, which shrinks it on its own.
+	parts := []string{"UTF-8", revealFolderLabel(shortenHome(hs.root)), "9 lines", "LF", "Tabs", "Go"}
 	gone := 0
 	for w := 1200; w >= 300; w -= 20 {
 		hs.tt.SetSize(w, 400)
@@ -284,8 +285,6 @@ func TestStatusBarDropsTheLeastNeededFirst(t *testing.T) {
 		switch {
 		case w == 760 && gone > 0:
 			t.Errorf("at 760, with room for it, the bar leaves out %q", parts[gone-1])
-		case w == 300 && gone < len(parts):
-			t.Errorf("at 300 the bar keeps %q", parts[gone:])
 		}
 	}
 }
