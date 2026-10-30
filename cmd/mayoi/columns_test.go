@@ -802,3 +802,58 @@ func TestSplitDiffRight(t *testing.T) {
 		t.Errorf("diffs share their scroll: %p %p", first, last)
 	}
 }
+
+// TestHiddenTabsKeptAreTheLastShown: only the tabs shown last keep their
+// text areas out of sight, and one past them still comes back where it
+// was scrolled, with its text.
+func TestHiddenTabsKeptAreTheLastShown(t *testing.T) {
+	hs := newHarness(t, true)
+	a, tt := hs.a, hs.tt
+	a.openFile(hs.longFile("long.go", 400), true)
+	hs.settle()
+	d := a.activeEditor()
+	d.vscroll.Y = 6000
+	hs.settle()
+	for i := range keepTabs + 2 {
+		p := hs.path(fmt.Sprintf("t%02d.txt", i))
+		os.WriteFile(p, []byte("tab\n"), 0o644)
+		a.openFile(p, false)
+		hs.settle()
+	}
+	col := a.column()
+	kept := 0
+	for _, t := range col.tabs {
+		if t != col.tab() && t.ed != nil && t.ed.areaBuild == a.builds {
+			kept++
+		}
+	}
+	if kept != keepTabs {
+		t.Errorf("%d tabs out of sight keep their areas, want %d", kept, keepTabs)
+	}
+	if d.areaBuild == a.builds {
+		t.Error("the tab shown first keeps its area")
+	}
+	// Built anew, it is covered until it is back where it was.
+	a.activate(col, 0, true)
+	for range 3 {
+		step(tt)
+		if d.vscroll.Y == 6000 {
+			return
+		}
+		box, ok := tt.Find("Editor long.go")
+		if !ok {
+			t.Fatal("no editor")
+		}
+		img := tt.Image()
+		r := image.Rect(int(box.X), int(box.Y), int(box.X+box.W), int(box.Y+box.H)).Intersect(img.Bounds())
+		first := img.At(r.Min.X, r.Min.Y)
+		for y := r.Min.Y; y < r.Max.Y; y += 3 {
+			for x := r.Min.X; x < r.Max.X; x += 3 {
+				if img.At(x, y) != first {
+					t.Fatalf("a frame shows the tab scrolled to %v", d.vscroll.Y)
+				}
+			}
+		}
+	}
+	t.Fatalf("back at %v", d.vscroll.Y)
+}

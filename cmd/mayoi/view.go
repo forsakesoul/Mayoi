@@ -609,7 +609,7 @@ func (a *app) columnView(c *ui.Context, col *column) {
 					}
 				default:
 					shown.ed.areaKept = shown.ed.areaShown(a, col)
-					shown.ed.areaCol, shown.ed.areaBuild = col, a.builds
+					shown.ed.areaCol, shown.ed.areaBuild, shown.ed.seenBuild = col, a.builds, a.builds
 					a.editorView(c, shown.ed)
 					a.hunkPeekView(c, shown.ed)
 					a.reviewBoxView(c, shown.ed)
@@ -625,16 +625,28 @@ func (a *app) columnView(c *ui.Context, col *column) {
 	})
 }
 
+// keepTabs is how many of a column's tabs out of sight keep their text
+// areas: those shown last. The others come back with a new one.
+const keepTabs = 8
+
 // keepEditors builds the text areas of a column's tabs that showed and are
 // out of sight now, hidden, where they show: they stay as they were, the
 // heights of their rows and their place among them, for when the tab comes
 // back, rather than start anew from estimates and scroll to their caret.
+// Only the keepTabs shown last do, as an area keeps the layout of its text.
 func (a *app) keepEditors(c *ui.Context, col *column, shown *colTab) {
+	kept := a.keptTabs[:0]
 	for _, t := range col.tabs {
-		d := t.ed
-		if t == shown || d == nil || !d.areaShown(a, col) {
-			continue
+		if d := t.ed; t != shown && d != nil && d.areaShown(a, col) {
+			kept = append(kept, t)
 		}
+	}
+	if len(kept) > keepTabs {
+		slices.SortStableFunc(kept, func(x, y *colTab) int { return y.ed.seenBuild - x.ed.seenBuild })
+		kept = kept[:keepTabs]
+	}
+	for _, t := range kept {
+		d := t.ed
 		d.areaCol, d.areaBuild = col, a.builds
 		ui.Column(c.Key(t.id)).Hidden(true).Children(func() {
 			ui.ScrollHorizontal(c).Children(func() {
@@ -642,6 +654,8 @@ func (a *app) keepEditors(c *ui.Context, col *column, shown *colTab) {
 			})
 		})
 	}
+	clear(kept)
+	a.keptTabs = kept[:0]
 }
 
 func (a *app) hideEditor(d *editor) {

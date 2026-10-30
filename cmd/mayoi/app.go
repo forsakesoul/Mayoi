@@ -241,6 +241,8 @@ type app struct {
 	// keyboard as the frame's columns began: a click on another's tab as
 	// they draw moves col, and the widget's input binds one control.
 	findCol *column
+	// keptTabs is keepEditors' list of the tabs it keeps, reused.
+	keptTabs []*colTab
 	// findPreview is the Markdown preview find last looked in, which
 	// shows its matches while find is open.
 	findPreview *markdownPreview

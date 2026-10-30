@@ -180,10 +180,11 @@ type editor struct {
 	lateY    float32
 	// areaCol is the column whose last build, areaBuild, made the editor's
 	// text area, shown or kept out of sight, and areaKept tells that the
-	// area showing is the one that build made, not a new one.
-	areaCol   *column
-	areaBuild int
-	areaKept  bool
+	// area showing is the one that build made, not a new one. seenBuild
+	// is the last build that showed it.
+	areaCol              *column
+	areaBuild, seenBuild int
+	areaKept             bool
 	// shownFrame is the frame the editor came back in sight, and
 	// coverFrame one that covers it as its new text area scrolls to its
 	// selection, not knowing where it is.
