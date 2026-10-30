@@ -178,8 +178,9 @@ type Prefs struct {
 	VimCtrlKeys bool `json:"vimCtrlKeys,omitempty"`
 	// Appearance is "light", "dark", or "" to follow the system.
 	Appearance string `json:"appearance,omitempty"`
-	// Theme is "matrix" for The Matrix or "purplegold" for Purple Gold,
-	// which are always dark, "claude" for Claude, "qoder" for Qoder,
+	// Theme is "matrix" for The Matrix, "purplegold" for Purple Gold,
+	// "pumpkin" for Jack-o'-Lantern, "witchsbrew" for Witch's Brew or
+	// "bloodmoon" for Blood Moon, which are always dark, "claude" for Claude, "qoder" for Qoder,
 	// "grokbot" for Grok Bot or "cursor" for Cursor, light or dark as
 	// Appearance is, or "" for Mayoi's own.
 	Theme string `json:"theme,omitempty"`

@@ -652,8 +652,10 @@ for options it doesn't know. A `mayoi` command an older Mayoi installed is broug
 
 ## Appearance and persistence
 
-**View → Theme** picks a theme, Mayoi, The Matrix, Claude, Qoder, Grok Bot, Cursor or Purple Gold, and apart from it whether the window follows the system's
-light or dark mode or is always Light or Dark. Light and Dark are greyed out under The Matrix and Purple Gold, which are always dark.
+**View → Theme** picks a theme, Mayoi, The Matrix, Claude, Qoder, Grok Bot, Cursor, Purple Gold, or one of the Halloween
+themes, Jack-o'-Lantern, Witch's Brew and Blood Moon, and apart from it whether the window follows the system's light or
+dark mode or is always Light or Dark. Light and Dark are greyed out under The Matrix, Purple Gold and the Halloween
+themes, which are always dark.
 The Matrix is phosphor green on black, with the whole window in the code's font, file icons in greens, and red and amber
 kept for what is removed, failed or changed. Digital rain falls behind the welcome page while the window has the
 keyboard, and holds still without it or when the system asks for reduced motion. Claude is Anthropic's ivory and warm
@@ -669,7 +671,14 @@ to one side and the other. Cursor is Cursor's own Cursor Light and Cursor Dark: 
 Cursor's blue for the accent and the buttons, in a light and a dark kind, and its code in Cursor's own colors. It has
 no character, so the welcome page keeps Mayoi's logo. Purple Gold is a near-black sidebar, tab strip and panel around
 a charcoal editor, with a royal purple status bar, classic gold for the accent, the buttons and the chosen rows, and its
-code in golds, lavenders, roses and teals. It has no character either.
+code in golds, lavenders, roses and teals. It has no character either. Jack-o'-Lantern is soot-black chrome around a
+warm editor, pumpkin orange for the accent and the buttons, and a status bar that glows like the lantern's face, with its
+code in candle yellow, ember and vine green and witch-purple keywords. Witch's Brew is plum chrome with a witch-purple
+status bar and slime green for the accent and the buttons, with its code in violets, slime greens, teals and lilacs.
+Blood Moon is near-black with a red undertone, crimson for the accent and the buttons, a dark-blood status bar, and a
+scarlet apart from the crimson for what loses something, with its code in reds, old gold and moonlight blue. Each has a
+character drawn from cells in its accent, which takes the logo's place and the status bar's start as Clawd does: a
+carved pumpkin whose face glows, a cauldron whose brew bubbles, and a bat that flaps its wings as it hops.
 **View → Theme → Color Theme…** (`workbench.action.selectTheme` in `keybindings.json`, as `cmd+k cmd+t`), or **Color
 Theme…** on the welcome page, opens a box of the themes, each with a little window in its colors and its character: the
 window takes each theme as ↑ and ↓ move to it, and ← and → switch the appearance; Return keeps them, and Escape goes

@@ -27,6 +27,9 @@ var themeChoices = []themeChoice{
 	{themeGrokBot, func() string { return "Grok Bot" }, locales.ThemeAboutGrokBot},
 	{themeCursor, func() string { return "Cursor" }, locales.ThemeAboutCursor},
 	{themePurpleGold, locales.CmdViewThemePurpleGold, locales.ThemeAboutPurpleGold},
+	{themePumpkin, locales.CmdViewThemePumpkin, locales.ThemeAboutPumpkin},
+	{themeWitchsBrew, locales.CmdViewThemeWitchsBrew, locales.ThemeAboutWitchsBrew},
+	{themeBloodMoon, locales.CmdViewThemeBloodMoon, locales.ThemeAboutBloodMoon},
 }
 
 // themeAppearances are the appearances the box chooses between, as the
@@ -205,8 +208,8 @@ func (a *app) themePickerView(c *ui.Context) {
 }
 
 // appearanceSwitch is the switch of the appearance in the box's head:
-// the system's, light or dark. The Matrix and Purple Gold are always dark,
-// so it greys out under them.
+// the system's, light or dark. It greys out under the themes that are
+// always dark.
 func (a *app) appearanceSwitch(c *ui.Context) {
 	sel := 0
 	for i, ap := range themeAppearances {
