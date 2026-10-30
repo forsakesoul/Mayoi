@@ -208,6 +208,9 @@ func (a *app) commandsIn(t locales.Messages) []command {
 		{"view.theme.grokbot", "Grok Bot", "", func() { a.setTheme(themeGrokBot) }},
 		{"view.theme.cursor", "Cursor", "", func() { a.setTheme(themeCursor) }},
 		{"view.theme.purplegold", t.CmdViewThemePurpleGold(), "", func() { a.setTheme(themePurpleGold) }},
+		{"view.theme.pumpkin", t.CmdViewThemePumpkin(), "", func() { a.setTheme(themePumpkin) }},
+		{"view.theme.witchsbrew", t.CmdViewThemeWitchsBrew(), "", func() { a.setTheme(themeWitchsBrew) }},
+		{"view.theme.bloodmoon", t.CmdViewThemeBloodMoon(), "", func() { a.setTheme(themeBloodMoon) }},
 		{localeCommand + "system", t.CmdViewLocaleSystem(), "", func() { a.setLocale("") }},
 	}
 	// The languages, each named in itself.
@@ -454,8 +457,8 @@ func (a *app) menu(cli bool, run func(id string, win *mygo.Window)) *mygo.Menu {
 		it.Type, it.Checked = mygo.MenuItemRadio, checked
 		return it
 	}
-	// The appearances, which The Matrix and Purple Gold, always dark, have
-	// no choice of, and the themes.
+	// The appearances, which the themes that are always dark have no
+	// choice of, and the themes.
 	appearance := func(id, ap string) *mygo.MenuItem {
 		it := radio(id, a.settings.Appearance == ap)
 		it.Disabled = alwaysDark(a.settings.Theme)
@@ -593,7 +596,8 @@ func (a *app) menu(cli bool, run func(id string, win *mygo.Window)) *mygo.Menu {
 				appearance("view.appearance.system", ""), appearance("view.appearance.light", "light"), appearance("view.appearance.dark", "dark"),
 				mygo.Separator(), theme("view.theme.mayoi", ""), theme("view.theme.matrix", themeMatrix), theme("view.theme.claude", themeClaude),
 				theme("view.theme.qoder", themeQoder), theme("view.theme.grokbot", themeGrokBot), theme("view.theme.cursor", themeCursor),
-				theme("view.theme.purplegold", themePurpleGold),
+				theme("view.theme.purplegold", themePurpleGold), theme("view.theme.pumpkin", themePumpkin),
+				theme("view.theme.witchsbrew", themeWitchsBrew), theme("view.theme.bloodmoon", themeBloodMoon),
 			}},
 			{Label: locales.MenuLanguage(), Submenu: languages}, mygo.Separator(),
 			{Role: mygo.RoleToggleFullScreen}, {Role: mygo.RoleToggleDevTools},

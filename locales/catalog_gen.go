@@ -742,6 +742,36 @@ func (msgs Messages) ThemeAboutPurpleGold() string {
 	return Catalog.Format(msgs.locale, "themeAboutPurpleGold", nil)
 }
 
+// ThemeAboutPumpkin says "Pumpkin orange by candlelight"
+// in the language the app shows.
+func ThemeAboutPumpkin() string { return In(i18n.Locale()).ThemeAboutPumpkin() }
+
+// ThemeAboutPumpkin says "Pumpkin orange by candlelight"
+// in the language of msgs.
+func (msgs Messages) ThemeAboutPumpkin() string {
+	return Catalog.Format(msgs.locale, "themeAboutPumpkin", nil)
+}
+
+// ThemeAboutWitchsBrew says "Plum dark, with slime green"
+// in the language the app shows.
+func ThemeAboutWitchsBrew() string { return In(i18n.Locale()).ThemeAboutWitchsBrew() }
+
+// ThemeAboutWitchsBrew says "Plum dark, with slime green"
+// in the language of msgs.
+func (msgs Messages) ThemeAboutWitchsBrew() string {
+	return Catalog.Format(msgs.locale, "themeAboutWitchsBrew", nil)
+}
+
+// ThemeAboutBloodMoon says "Crimson and old gold under a red moon"
+// in the language the app shows.
+func ThemeAboutBloodMoon() string { return In(i18n.Locale()).ThemeAboutBloodMoon() }
+
+// ThemeAboutBloodMoon says "Crimson and old gold under a red moon"
+// in the language of msgs.
+func (msgs Messages) ThemeAboutBloodMoon() string {
+	return Catalog.Format(msgs.locale, "themeAboutBloodMoon", nil)
+}
+
 // ThemeAboutQoder says "Qoder's Forest greens"
 // in the language the app shows.
 func ThemeAboutQoder() string { return In(i18n.Locale()).ThemeAboutQoder() }
@@ -3184,6 +3214,36 @@ func CmdViewThemePurpleGold() string { return In(i18n.Locale()).CmdViewThemePurp
 // in the language of msgs.
 func (msgs Messages) CmdViewThemePurpleGold() string {
 	return Catalog.Format(msgs.locale, "cmdViewThemePurpleGold", nil)
+}
+
+// CmdViewThemePumpkin says "Jack-o'-Lantern"
+// in the language the app shows.
+func CmdViewThemePumpkin() string { return In(i18n.Locale()).CmdViewThemePumpkin() }
+
+// CmdViewThemePumpkin says "Jack-o'-Lantern"
+// in the language of msgs.
+func (msgs Messages) CmdViewThemePumpkin() string {
+	return Catalog.Format(msgs.locale, "cmdViewThemePumpkin", nil)
+}
+
+// CmdViewThemeWitchsBrew says "Witch's Brew"
+// in the language the app shows.
+func CmdViewThemeWitchsBrew() string { return In(i18n.Locale()).CmdViewThemeWitchsBrew() }
+
+// CmdViewThemeWitchsBrew says "Witch's Brew"
+// in the language of msgs.
+func (msgs Messages) CmdViewThemeWitchsBrew() string {
+	return Catalog.Format(msgs.locale, "cmdViewThemeWitchsBrew", nil)
+}
+
+// CmdViewThemeBloodMoon says "Blood Moon"
+// in the language the app shows.
+func CmdViewThemeBloodMoon() string { return In(i18n.Locale()).CmdViewThemeBloodMoon() }
+
+// CmdViewThemeBloodMoon says "Blood Moon"
+// in the language of msgs.
+func (msgs Messages) CmdViewThemeBloodMoon() string {
+	return Catalog.Format(msgs.locale, "cmdViewThemeBloodMoon", nil)
 }
 
 // CmdViewTogglePreview says "Toggle Preview"
@@ -12934,11 +12994,11 @@ func (msgs Messages) PrefTitleTheme() string {
 	return Catalog.Format(msgs.locale, "prefTitleTheme", nil)
 }
 
-// PrefDescTheme says "The colors of every window. The Matrix and Purple Gold are always dark."
+// PrefDescTheme says "The colors of every window. The Matrix, Purple Gold and the Halloween themes are always dark."
 // in the language the app shows.
 func PrefDescTheme() string { return In(i18n.Locale()).PrefDescTheme() }
 
-// PrefDescTheme says "The colors of every window. The Matrix and Purple Gold are always dark."
+// PrefDescTheme says "The colors of every window. The Matrix, Purple Gold and the Halloween themes are always dark."
 // in the language of msgs.
 func (msgs Messages) PrefDescTheme() string {
 	return Catalog.Format(msgs.locale, "prefDescTheme", nil)
@@ -13872,6 +13932,36 @@ func PrefOptThemePurplegold() string { return In(i18n.Locale()).PrefOptThemePurp
 // in the language of msgs.
 func (msgs Messages) PrefOptThemePurplegold() string {
 	return Catalog.Format(msgs.locale, "prefOptThemePurplegold", nil)
+}
+
+// PrefOptThemePumpkin says "Jack-o'-Lantern"
+// in the language the app shows.
+func PrefOptThemePumpkin() string { return In(i18n.Locale()).PrefOptThemePumpkin() }
+
+// PrefOptThemePumpkin says "Jack-o'-Lantern"
+// in the language of msgs.
+func (msgs Messages) PrefOptThemePumpkin() string {
+	return Catalog.Format(msgs.locale, "prefOptThemePumpkin", nil)
+}
+
+// PrefOptThemeWitchsbrew says "Witch's Brew"
+// in the language the app shows.
+func PrefOptThemeWitchsbrew() string { return In(i18n.Locale()).PrefOptThemeWitchsbrew() }
+
+// PrefOptThemeWitchsbrew says "Witch's Brew"
+// in the language of msgs.
+func (msgs Messages) PrefOptThemeWitchsbrew() string {
+	return Catalog.Format(msgs.locale, "prefOptThemeWitchsbrew", nil)
+}
+
+// PrefOptThemeBloodmoon says "Blood Moon"
+// in the language the app shows.
+func PrefOptThemeBloodmoon() string { return In(i18n.Locale()).PrefOptThemeBloodmoon() }
+
+// PrefOptThemeBloodmoon says "Blood Moon"
+// in the language of msgs.
+func (msgs Messages) PrefOptThemeBloodmoon() string {
+	return Catalog.Format(msgs.locale, "prefOptThemeBloodmoon", nil)
 }
 
 // PrefOptAppearanceLight says "Light"

@@ -12,6 +12,10 @@ needs a `## <version>` section here, or its build fails.
 - A folder can set preferences such as `vim` or `autoSave` for itself in `.mayoi/settings.json`.
 - Pick a folder at the top of the settings window to change its own settings rather than yours.
 - `settings.json` and `keybindings.json` still open as files from **File → Open Settings (JSON)** and the like.
+- **View → Theme** adds three Halloween themes, always dark: Jack-o'-Lantern, Witch's Brew and Blood Moon.
+- Jack-o'-Lantern is pumpkin orange by candlelight, with a carved pumpkin on the welcome page and status bar.
+- Witch's Brew is plum dark with slime green, and a bubbling cauldron for its character.
+- Blood Moon is crimson and old gold on a red-tinged black, with a bat that flaps its wings as it hops.
 - Headings in the Markdown preview take the color theme's heading color, as the editor does.
 - Command-clicking a terminal path or URL followed by Chinese punctuation no longer takes the text after it.
 - Switching back to a tab no longer flashes a blank editor for a frame before its text shows.
