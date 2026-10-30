@@ -615,7 +615,8 @@ func TestEditsKeepTheView(t *testing.T) {
 					break // pasted lines push the caret out of view
 				}
 				hs.key(k.mods, k.key)
-				if line, y := top(); line != line0 || y != y0 {
+				// Within what a float32 holds this far down the text.
+				if line, y := top(); line != line0 || y < y0-0.01 || y > y0+0.01 {
 					t.Fatalf("wrap %v, line %d, %v %v: line %d at %v at the top, was %d at %v", wrap, at, k.mods, k.key, line, y, line0, y0)
 				}
 			}
@@ -738,5 +739,59 @@ func TestSelectAllLeavesTheView(t *testing.T) {
 		tt.Type("x")
 		hs.settle()
 		expectText(t, d, "x")
+	}
+}
+
+// Edits the app makes, which have the text area forget the heights of its
+// rows, leave the lines where they show while the lines wrap.
+func TestWrappedEditsKeepTheCaretOnScreen(t *testing.T) {
+	hs := newHarness(t, true)
+	a, tt := hs.a, hs.tt
+	a.settings.WordWrap = true
+	a.openFile(hs.proseFile("prose.txt"), true)
+	hs.settle()
+	d := a.activeEditor()
+	line := func(i int) int { s, _ := d.buf.Snapshot().LineRange(i); return s }
+	hs.place(d, line(50), line(50))
+	hs.place(d, line(52), line(52))
+	caretY := func() float32 {
+		r, _ := tt.TextCaret()
+		return r.Y
+	}
+	y := caretY()
+	for _, c := range []struct {
+		name string
+		do   func()
+		dy   float32
+	}{
+		{"Enter", func() { tt.Key(0, ui.KeyEnter) }, a.font.lineH},
+		{"Undo", func() { tt.Key(ui.Cmd, ui.KeyZ) }, 0},
+		{"Redo", func() { tt.Key(ui.Cmd|ui.Shift, ui.KeyZ) }, a.font.lineH},
+	} {
+		c.do()
+		hs.settle()
+		if got := caretY(); got != y+c.dy {
+			t.Errorf("%s: caret at y %v, want %v", c.name, got, y+c.dy)
+		}
+	}
+
+	// At the last row of the view, the view makes room for the new line.
+	box, ok := tt.Find("Editor prose.txt")
+	if !ok {
+		t.Fatal("no editor")
+	}
+	for caretY() < box.Y+box.H-3*a.font.lineH {
+		tt.Key(0, ui.KeyDown)
+		hs.settle()
+	}
+	for range 4 {
+		tt.Key(0, ui.KeyEnter)
+		hs.settle()
+		if got := caretY(); got+a.font.lineH > box.Y+box.H {
+			t.Errorf("Enter at the end of the view: caret at y %v in %+v", got, box)
+		}
+		if got := caretY(); got < box.Y+box.H-5*a.font.lineH {
+			t.Errorf("Enter at the end of the view: caret jumped up to y %v in %+v", got, box)
+		}
 	}
 }

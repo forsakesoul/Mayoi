@@ -13,6 +13,7 @@ needs a `## <version>` section here, or its build fails.
 - Select All no longer flashes the end of the file before the view settles.
 - With word wrap on, switching back to a tab returns to the same lines, not lines nearby.
 - Switching back to a tab whose caret is out of view no longer flashes a blank editor.
+- With word wrap on, Enter, Tab, undo and redo no longer move the text around the screen.
 
 ## 0.15.0
 

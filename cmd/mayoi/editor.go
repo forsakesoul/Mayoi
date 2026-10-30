@@ -172,7 +172,10 @@ func (a *app) editorView(c *ui.Context, d *editor) {
 	early := len(d.cmds) > 0 && !d.areaInput && d.buf.Snapshot().Version() == d.version
 	if early {
 		keepLine, keepY = a.runCmds(d)
+	} else if d.lateLine >= 0 {
+		keepLine, keepY = d.lateLine, d.lateY
 	}
+	d.lateLine = -1
 	// What was typed since the last frame, for undo.
 	d.observe()
 	snap := d.buf.Snapshot()
@@ -200,6 +203,8 @@ func (a *app) editorView(c *ui.Context, d *editor) {
 	if wrap {
 		d.hscroll.X = 0
 	}
+	reloaded := d.reloaded != nil
+	areaY := float32(-1) // the offset the area is to keep, when not this frame's
 	if r := d.reloaded; r != nil {
 		// The line at the top, found where the lines were before, stays at
 		// the top, below the lines the reload added or took above it.
@@ -234,7 +239,16 @@ func (a *app) editorView(c *ui.Context, d *editor) {
 			area.TrackLines(&d.lines)
 			if keepLine >= 0 {
 				g := a.geometry(d, lines)
-				d.vscroll.Y = max(0, editorPadY+g.top(min(keepLine, lines-1))-keepY)
+				top := min(keepLine, lines-1)
+				if at, ok := d.editedAt(snap); ok && !reloaded && at >= top && float32(at-top)*f.lineH < view.H-keepY {
+					// The edit's caret is near: measured, the lines in view
+					// find it where it shows, not where the estimates put it.
+					// The measures change the estimates above them, so the
+					// area keeps its place by its own line, not by an offset.
+					areaY = d.vscroll.Y
+					g.measureDown(top, view.H-keepY)
+				}
+				d.vscroll.Y = max(0, editorPadY+g.top(top)-keepY)
 			}
 		} else {
 			area.NoWrap()
@@ -327,7 +341,7 @@ func (a *app) editorView(c *ui.Context, d *editor) {
 		}
 		if !early && len(d.cmds) > 0 {
 			// The next frame shows them.
-			a.runCmds(d)
+			d.lateLine, d.lateY = a.runCmds(d)
 		}
 		caretLine := snap.LineAt(min(caret, snap.Len()))
 		if vimKeys && d.vim.mode.visual() {
@@ -375,6 +389,9 @@ func (a *app) editorView(c *ui.Context, d *editor) {
 			area.Width(contentW)
 		} else {
 			area.FillWidth()
+		}
+		if areaY >= 0 {
+			d.vscroll.Y = areaY
 		}
 		area.TrackScroll(&d.vscroll).
 			// The area is as wide as its widest line: keep its scroll bar
