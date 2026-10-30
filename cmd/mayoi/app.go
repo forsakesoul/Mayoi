@@ -289,6 +289,8 @@ type app struct {
 	// frame may build the view several times.
 	frame   int
 	frameAt time.Time
+	// builds counts the builds of the view.
+	builds int
 	// dragging is set while a tab is dragged, as the frame before found.
 	dragging, dragNow bool
 	// middle is the tab a middle press is on, until it is let go of: the
@@ -408,6 +410,7 @@ func (a *app) park() {
 		for _, t := range col.tabs {
 			if t.ed != nil {
 				a.hideEditor(t.ed)
+				t.ed.areaCol = nil
 			}
 		}
 	}

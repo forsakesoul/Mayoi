@@ -141,10 +141,13 @@ func (f codeFont) gutterWidth(n int) float32 {
 // not wrap, and then on its rows (wrapRows).
 func (a *app) editorView(c *ui.Context, d *editor) {
 	p, f := a.pal, a.font
+	kept := false
 	switch {
 	case d.hidden:
-		// Back in sight, where it was.
-		d.hidden, d.pinFrame, d.resync, d.shownFrame = false, 0, true, a.frame
+		// Back in sight, where it was. A text area kept all along is where
+		// it was too, unless the text changed while it was out of sight.
+		kept = d.areaKept && d.buf.Snapshot().Version() == d.version
+		d.hidden, d.pinFrame, d.resync, d.shownFrame = false, 0, d.resync || !kept, a.frame
 		d.vscroll.Y = d.hiddenY
 	case d.pinFrame != 0 && a.frame > d.pinFrame+1:
 		d.pinFrame = 0
@@ -243,6 +246,9 @@ func (a *app) editorView(c *ui.Context, d *editor) {
 		// A new area puts the caret at the end: at the editor's selection,
 		// which is the start for a file just opened.
 		d.resync = d.resync || !d.caretSeen
+		if from, to := area.TextAnchorCaret(); kept && d.parked < 0 && [2]int{from, to} != d.sel {
+			d.resync = true // moved while it was out of sight
+		}
 		quiet := d.pending != nil && d.quiet
 		jump := d.pending != nil && !quiet
 		// A jump asked for goes a third of the way down from an edge of

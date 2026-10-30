@@ -172,6 +172,12 @@ type editor struct {
 	hiddenY float32
 	// focusNext repeats a focus request after a hidden editor is built again.
 	focusNext bool
+	// areaCol is the column whose last build, areaBuild, made the editor's
+	// text area, shown or kept out of sight, and areaKept tells that the
+	// area showing is the one that build made, not a new one.
+	areaCol   *column
+	areaBuild int
+	areaKept  bool
 	// shownFrame is the frame the editor came back in sight, and
 	// coverFrame one that covers it as its new text area scrolls to its
 	// selection, not knowing where it is.
@@ -394,6 +400,12 @@ func columns(s string) int {
 		}
 	}
 	return col
+}
+
+// areaShown reports whether the build before this one made the editor's
+// text area in col: its state lives on as this build makes it there again.
+func (d *editor) areaShown(a *app, col *column) bool {
+	return d.areaCol == col && d.areaBuild == a.builds-1
 }
 
 // selectRange selects runes start up to end in the next frame, and

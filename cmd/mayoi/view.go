@@ -69,6 +69,7 @@ func (a *app) view(c *ui.Context) {
 	a.fontTerminals()
 	a.copyTerminals()
 	p := a.pal
+	a.builds++
 	if now := c.Now(); now != a.frameAt {
 		a.frameAt = now
 		a.frame++
@@ -607,6 +608,8 @@ func (a *app) columnView(c *ui.Context, col *column) {
 						a.previewFindView(c, v)
 					}
 				default:
+					shown.ed.areaKept = shown.ed.areaShown(a, col)
+					shown.ed.areaCol, shown.ed.areaBuild = col, a.builds
 					a.editorView(c, shown.ed)
 					a.hunkPeekView(c, shown.ed)
 					a.reviewBoxView(c, shown.ed)
@@ -618,7 +621,27 @@ func (a *app) columnView(c *ui.Context, col *column) {
 			})
 		}
 		a.dropZones(c, col, over)
+		a.keepEditors(c, col, shown)
 	})
+}
+
+// keepEditors builds the text areas of a column's tabs that showed and are
+// out of sight now, hidden, where they show: they stay as they were, the
+// heights of their rows and their place among them, for when the tab comes
+// back, rather than start anew from estimates and scroll to their caret.
+func (a *app) keepEditors(c *ui.Context, col *column, shown *colTab) {
+	for _, t := range col.tabs {
+		d := t.ed
+		if t == shown || d == nil || !d.areaShown(a, col) {
+			continue
+		}
+		d.areaCol, d.areaBuild = col, a.builds
+		ui.Column(c.Key(t.id)).Hidden(true).Children(func() {
+			ui.ScrollHorizontal(c).Children(func() {
+				ui.TextAreaBufferBase(c, d.buf)
+			})
+		})
+	}
 }
 
 func (a *app) hideEditor(d *editor) {

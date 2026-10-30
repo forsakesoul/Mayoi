@@ -174,38 +174,99 @@ func TestHiddenTabComesBackInPlace(t *testing.T) {
 // view, which its new text area leaves where it is, shows its text from
 // the first frame, not a blank one.
 func TestHiddenTabComesBackWithItsText(t *testing.T) {
-	hs := newHarness(t, true)
-	a, tt := hs.a, hs.tt
-	a.openFile(hs.longFile("long.go", 400), true)
-	hs.settle()
-	d := a.activeEditor()
-	s, _ := d.buf.Snapshot().LineRange(300)
-	hs.place(d, s, s)
-	gutter := func() []byte {
-		t.Helper()
-		box, ok := tt.Find("Editor long.go")
-		if !ok {
-			t.Fatal("no editor")
+	for _, c := range []struct {
+		name      string
+		wrap      bool
+		caretAway bool
+	}{
+		{"caret in view", false, false},
+		{"caret out of view", false, true},
+		{"wrapped, caret in view", true, false},
+		{"wrapped, caret out of view", true, true},
+	} {
+		hs := newHarness(t, true)
+		a, tt := hs.a, hs.tt
+		a.settings.WordWrap = c.wrap
+		a.openFile(hs.proseFile("prose.txt"), true)
+		hs.settle()
+		d := a.activeEditor()
+		s, _ := d.buf.Snapshot().LineRange(300)
+		hs.place(d, s, s)
+		if c.caretAway {
+			d.vscroll.Y = 400
+			hs.settle()
 		}
-		img := tt.Image()
-		r := image.Rect(int(box.X), int(box.Y), int(box.X+d.gutterW), int(box.Y+box.H)).Intersect(img.Bounds())
-		var out []byte
-		for y := r.Min.Y; y < r.Max.Y; y++ {
-			for x := r.Min.X; x < r.Max.X; x++ {
-				c := img.RGBAAt(x, y)
-				out = append(out, c.R, c.G, c.B)
+		gutter := func() []byte {
+			t.Helper()
+			box, ok := tt.Find("Editor prose.txt")
+			if !ok {
+				t.Fatal("no editor")
+			}
+			img := tt.Image()
+			r := image.Rect(int(box.X), int(box.Y), int(box.X+d.gutterW), int(box.Y+box.H)).Intersect(img.Bounds())
+			var out []byte
+			for y := r.Min.Y; y < r.Max.Y; y++ {
+				for x := r.Min.X; x < r.Max.X; x++ {
+					c := img.RGBAAt(x, y)
+					out = append(out, c.R, c.G, c.B)
+				}
+			}
+			return out
+		}
+		want := string(gutter())
+		y := d.vscroll.Y
+		a.openFile(hs.path("README.md"), true)
+		hs.settle()
+		a.activate(a.column(), 0, true)
+		for i := range 3 {
+			step(tt)
+			if d.vscroll.Y != y {
+				t.Errorf("%s: frame %d is scrolled to %v, not %v", c.name, i, d.vscroll.Y, y)
+			}
+			if string(gutter()) != want {
+				t.Errorf("%s: frame %d shows other line numbers, scrolled to %v", c.name, i, d.vscroll.Y)
 			}
 		}
-		return out
+		// The area kept takes the keys, at the caret kept.
+		tt.Type("Z")
+		hs.settle()
+		if got := d.buf.Snapshot().Slice(s, s+1); got != "Z" {
+			t.Errorf("%s: typed before %q", c.name, got)
+		}
+		if box, _ := tt.Find("Editor prose.txt"); !a.inView(d, a.geometry(d, d.buf.Snapshot().LineCount()), d.buf.Snapshot(), s, box.H) {
+			t.Errorf("%s: the caret it typed at is out of view", c.name)
+		}
 	}
-	want := string(gutter())
-	a.openFile(hs.path("README.md"), true)
-	hs.settle()
-	a.activate(a.column(), 0, true)
-	for i := range 3 {
-		step(tt)
-		if string(gutter()) != want {
-			t.Fatalf("frame %d shows other line numbers, scrolled to %v", i, d.vscroll.Y)
+}
+
+// Text changed while a tab is out of sight shows as it comes back, with
+// the caret moved along with it, from a text area that has not seen it.
+func TestHiddenTabComesBackToEditedText(t *testing.T) {
+	for _, wrap := range []bool{false, true} {
+		hs, left, right := splitHarness(t, func(hs *harness) string { return hs.proseFile("prose.txt") })
+		a := hs.a
+		a.settings.WordWrap = wrap
+		hs.settle()
+		s, _ := left.buf.Snapshot().LineRange(300)
+		hs.place(left, s, s)
+		col := a.cols[0]
+		left.vscroll.Focus()
+		hs.settle()
+		a.openFile(hs.path("README.md"), true)
+		hs.settle()
+		right.vscroll.Focus()
+		hs.settle()
+		right.edit([2]int{0, 0}, textEdit{0, 0, "new\n"})
+		hs.settle()
+		a.activate(col, 0, true)
+		hs.settle()
+		if left.sel != [2]int{s + 4, s + 4} {
+			t.Errorf("wrap %v: selection %v, want the caret at %d", wrap, left.sel, s+4)
+		}
+		// The area's estimates start over with the new text: only the lines
+		// that do not wrap are where they were.
+		if box, _ := hs.tt.Find("Editor prose.txt"); !wrap && !a.inView(left, a.geometry(left, left.buf.Snapshot().LineCount()), left.buf.Snapshot(), left.sel[1], box.H) {
+			t.Errorf("the caret is out of view at %v", left.vscroll.Y)
 		}
 	}
 }
