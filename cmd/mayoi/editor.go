@@ -226,6 +226,12 @@ func (a *app) editorView(c *ui.Context, d *editor) {
 			Label(locales.EditorLabel(d.name())).
 			ReadOnly(vimKeys || a.chording() || d.locked())
 		a.takeKeys(area, placeEditor, func(ev ui.InputEvent) bool {
+			switch ev.Kind {
+			case ui.InputPointerDown:
+				d.pressing = true
+			case ui.InputPointerUp:
+				d.pressing = false
+			}
 			if a.editorKey(d, ev) {
 				return true
 			}
@@ -932,6 +938,17 @@ func (a *app) revealColumn(d *editor, snap ui.TextSnapshot, caret int, viewW, te
 	// Measure the line as the area lays it out, tabs at the platform's
 	// stops.
 	x := textX + a.font.width(snap.Slice(s, min(caret, snap.Len())))
+	if d.pressing {
+		// The caret follows the pointer, which a margin would scroll on and
+		// on from inside the view: only past the edge, as far as it is past.
+		switch charW := a.font.charW; {
+		case x < d.hscroll.X+textX:
+			d.hscroll.X = max(0, x-textX-charW)
+		case x > d.hscroll.X+viewW:
+			d.hscroll.X = x - viewW + charW
+		}
+		return
+	}
 	left, right := d.hscroll.X+textX, d.hscroll.X+viewW-textPadR
 	switch {
 	case x < left:

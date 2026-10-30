@@ -172,6 +172,8 @@ type editor struct {
 	hiddenY float32
 	// focusNext repeats a focus request after a hidden editor is built again.
 	focusNext bool
+	// pressing is set while a pointer button pressed on the text is down.
+	pressing bool
 	// lateLine is the line to keep at the top, at lateY, for the next frame
 	// to show the edits made after this one's text was read, -1 for none.
 	lateLine int

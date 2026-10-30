@@ -856,3 +856,36 @@ func TestWrappedEditsKeepTheCaretOnScreen(t *testing.T) {
 		}
 	}
 }
+
+// A click near the right edge leaves the text where it shows, for a second
+// click to find the word the first was on; a drag past the edge scrolls.
+func TestClickAtTheRightEdgeLeavesTheText(t *testing.T) {
+	hs, d := editHarness(t, "wide.txt", strings.Repeat("abcdefghi ", 60)+"\nshort\n")
+	tt := hs.tt
+	box, ok := tt.Find("Editor wide.txt")
+	if !ok {
+		t.Fatal("no editor")
+	}
+	x, y := box.X+box.W-10, box.Y+editorPadY+hs.a.font.lineH/2
+	tt.Press(x, y)
+	hs.settle()
+	if d.hscroll.X != 0 {
+		t.Errorf("pressed: scrolled sideways to %v", d.hscroll.X)
+	}
+	tt.Release(x, y)
+	hs.settle()
+	if d.hscroll.X != 0 {
+		t.Errorf("released: scrolled sideways to %v", d.hscroll.X)
+	}
+	tt.Press(x-40, y)
+	hs.settle()
+	tt.Move(x+30, y)
+	for range 10 {
+		step(tt)
+	}
+	if d.hscroll.X == 0 {
+		t.Error("a drag past the right edge did not scroll sideways")
+	}
+	tt.Release(x+30, y)
+	hs.settle()
+}
