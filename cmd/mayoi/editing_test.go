@@ -691,3 +691,52 @@ func TestCutLineKeepsView(t *testing.T) {
 		}
 	}
 }
+
+// proseFile writes lines of many lengths, which wrap to many rows, so that
+// the heights the text area estimates are far from the ones it measures.
+func (hs *harness) proseFile(name string) string {
+	var b strings.Builder
+	for i := range 800 {
+		fmt.Fprintf(&b, "line %d %s\n", i, strings.Repeat("word ", 20+(i%7)*40))
+	}
+	p := hs.path(name)
+	if err := os.WriteFile(p, []byte(b.String()), 0o644); err != nil {
+		hs.t.Fatal(err)
+	}
+	return p
+}
+
+// Select All leaves the view where it is in the frames it takes, rather
+// than showing the end of the text for one.
+func TestSelectAllLeavesTheView(t *testing.T) {
+	for _, wrap := range []bool{false, true} {
+		hs := newHarness(t, true)
+		a, tt := hs.a, hs.tt
+		a.settings.WordWrap = wrap
+		a.openFile(hs.proseFile("prose.txt"), true)
+		hs.settle()
+		d := a.activeEditor()
+		s, _ := d.buf.Snapshot().LineRange(100)
+		hs.place(d, s, s)
+		// The line at the top, and how far above the view it starts.
+		top := func() (int, float32) {
+			g := a.geometry(d, d.buf.Snapshot().LineCount())
+			l := g.at(d.vscroll.Y - editorPadY)
+			return l, g.top(l) - d.vscroll.Y
+		}
+		line, off := top()
+		a.run("edit.selectAll")
+		for i := range 3 {
+			step(tt)
+			if l, o := top(); l != line || o != off {
+				t.Errorf("wrap %v: frame %d shows line %d%+v at the top, not %d%+v", wrap, i, l, o, line, off)
+			}
+		}
+		if n := d.buf.Snapshot().Len(); d.sel != [2]int{0, n} {
+			t.Errorf("wrap %v: selection %v of %d", wrap, d.sel, n)
+		}
+		tt.Type("x")
+		hs.settle()
+		expectText(t, d, "x")
+	}
+}

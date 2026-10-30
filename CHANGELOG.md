@@ -10,6 +10,7 @@ needs a `## <version>` section here, or its build fails.
 - Switching back to a tab no longer flashes a blank editor for a frame before its text shows.
 - When a file changes on disk, the editor stays where you were reading instead of jumping to the caret.
 - The caret stays on its line when a file changes on disk above it, rather than drifting to other text.
+- Select All no longer flashes the end of the file before the view settles.
 
 ## 0.15.0
 

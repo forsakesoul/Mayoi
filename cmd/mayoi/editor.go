@@ -248,11 +248,19 @@ func (a *app) editorView(c *ui.Context, d *editor) {
 		// A jump asked for goes a third of the way down from an edge of
 		// the view too; an edit's selection only from out of view.
 		center := jump && (d.center || !a.inView(d, g, snap, d.pending[1], view.H))
+		// Select All by the area's own: it does not scroll to the caret, at
+		// the end of the text, as a selection it is given does for a frame.
+		whole := false
 		if r := d.pending; quiet {
 			// The view stays where it is, as it does for an edit made in
 			// another column.
 			d.sel = *r
-			d.pending, d.quiet, d.resync, d.parked = nil, false, true, -1
+			d.pending, d.quiet, d.parked = nil, false, -1
+			if whole = focused && !edited && r[1] > 0 && *r == [2]int{0, snap.Len()}; whole {
+				d.vscroll.SelectAll(c)
+			} else {
+				d.resync = true
+			}
 		} else if r != nil {
 			// A jump asked for goes where it goes: no pin puts it back.
 			area.SetTextSelection(r[0], r[1])
@@ -282,6 +290,9 @@ func (a *app) editorView(c *ui.Context, d *editor) {
 			}
 		}
 		anchor, caret := area.TextAnchorCaret()
+		if whole {
+			anchor, caret = d.sel[0], d.sel[1] // the area selects after this build
+		}
 		d.areaInput = false
 		if d.parked >= 0 {
 			switch {
