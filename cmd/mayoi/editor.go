@@ -20,6 +20,9 @@ const (
 	editorPadY = 8  // above the first line
 	gutterGap  = 10 // between the line numbers and the text
 	textPadR   = 32 // right of the widest line
+	// widestWhole is the size of the largest text, in bytes, whose longest
+	// line is measured again at every edit: that of a larger one only grows.
+	widestWhole = 1 << 20
 )
 
 // codeFont is the editor's font and the metrics of its monospaced cells.
@@ -381,6 +384,12 @@ func (a *app) editorView(c *ui.Context, d *editor) {
 		// The lines in view.
 		first, last := a.linesInView(g, d.vscroll.Y, view.H)
 		contentW := view.W
+		if !wrap && edited && d.widestVersion != snap.Version() && snap.ByteLen() <= widestWhole {
+			// The longest line may be gone, and the area as wide as it with
+			// it: measured anew, the text scrolls sideways no further than
+			// its lines go.
+			d.measureWidest()
+		}
 		if m := &d.measured; !wrap && (m.version != snap.Version() || m.first != first || m.last != last) {
 			m.version, m.first, m.last = snap.Version(), first, last
 			for i := first; i <= last; i++ {

@@ -24,6 +24,7 @@ needs a `## <version>` section here, or its build fails.
 - Pressing Enter or moving a line at the edge of the editor scrolls one line, not a third of the page.
 - Clicking or holding near the right edge of a long line no longer runs the text sideways.
 - Find scrolls a match at the top of the editor out from under the find bar.
+- Deleting the longest line shrinks how far the editor scrolls sideways.
 
 ## 0.15.0
 
