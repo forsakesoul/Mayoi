@@ -10,6 +10,12 @@ needs a `## <version>` section here, or its build fails.
 - Switching back to a tab no longer flashes a blank editor for a frame before its text shows.
 - When a file changes on disk, the editor stays where you were reading instead of jumping to the caret.
 - The caret stays on its line when a file changes on disk above it, rather than drifting to other text.
+- Select All no longer flashes the end of the file before the view settles.
+- With word wrap on, switching back to a tab returns to the same lines, not lines nearby.
+- Switching back to a tab whose caret is out of view no longer flashes a blank editor.
+- With word wrap on, Enter, Tab, undo and redo no longer move the text around the screen.
+- Pressing Enter or moving a line at the edge of the editor scrolls one line, not a third of the page.
+- Clicking or holding near the right edge of a long line no longer runs the text sideways.
 
 ## 0.15.0
 

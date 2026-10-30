@@ -149,6 +149,18 @@ func (g geometry) row(i, off int) int {
 	return k
 }
 
+// measureDown has the text area lay out the lines from line i down, as many
+// as fill room, for their tops below to be known rather than estimated.
+func (g geometry) measureDown(i int, room float32) {
+	if g.lines == nil {
+		return
+	}
+	for ; i < g.n && room > 0; i++ {
+		g.lines.Rows(i)
+		room -= g.top(i+1) - g.top(i)
+	}
+}
+
 // rowSlack is how many lines beyond those in view the editor finds the
 // rows of, for what it found to paint in the frame before.
 const rowSlack = 16
