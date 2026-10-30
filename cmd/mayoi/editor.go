@@ -20,6 +20,9 @@ const (
 	editorPadY = 8  // above the first line
 	gutterGap  = 10 // between the line numbers and the text
 	textPadR   = 32 // right of the widest line
+	// widestWhole is the size of the largest text, in bytes, whose longest
+	// line is measured again at every edit: that of a larger one only grows.
+	widestWhole = 1 << 20
 )
 
 // codeFont is the editor's font and the metrics of its monospaced cells.
@@ -142,12 +145,16 @@ func (f codeFont) gutterWidth(n int) float32 {
 // not wrap, and then on its rows (wrapRows).
 func (a *app) editorView(c *ui.Context, d *editor) {
 	p, f := a.pal, a.font
-	kept := false
+	kept, placed := false, false
 	switch {
 	case d.hidden:
 		// Back in sight, where it was. A text area kept all along is where
 		// it was too, unless the text changed while it was out of sight.
+		// A new one is put back by the line that was at the top: its rows
+		// are estimates, not where the last one laid them out, and the
+		// lines may have moved.
 		kept = d.areaKept && d.buf.Snapshot().Version() == d.version
+		d.hiddenPlaced = !kept && d.hiddenPlaced
 		d.hidden, d.pinFrame, d.resync, d.shownFrame = false, 0, d.resync || !kept, a.frame
 		d.vscroll.Y = d.hiddenY
 	case d.pinFrame != 0 && a.frame > d.pinFrame+1:
@@ -156,6 +163,13 @@ func (a *app) editorView(c *ui.Context, d *editor) {
 		// Every build of the frame after: a frame that animates builds the
 		// view again, after the area laid out where it was put back.
 		d.vscroll.Y = d.pinY
+	}
+	if d.hiddenPlaced {
+		// The new area has no rows until it is laid out, which makes the
+		// offset of the line a guess: the frame after, with the area's
+		// estimates, puts the line back again.
+		placed = a.frame <= d.shownFrame+1
+		d.hiddenPlaced = placed
 	}
 
 	if !a.prefs().Vim {
@@ -170,9 +184,17 @@ func (a *app) editorView(c *ui.Context, d *editor) {
 	// text after. They start from the selection the last frame read, so
 	// they wait for the area's own when it took keys or a click since.
 	keepLine, keepY := -1, float32(0)
+	if placed {
+		snap := d.buf.Snapshot()
+		keepLine, keepY = snap.LineAt(min(d.hiddenAt, snap.Len())), d.hiddenOff
+	}
 	early := len(d.cmds) > 0 && !d.areaInput && d.buf.Snapshot().Version() == d.version
 	if early {
-		keepLine, keepY = a.runCmds(d)
+		// The line kept from out of sight stays, unless the edits scrolled.
+		y0 := d.vscroll.Y
+		if line, y := a.runCmds(d); line >= 0 || !placed || d.vscroll.Y != y0 {
+			keepLine, keepY = line, y
+		}
 	} else if d.lateLine >= 0 {
 		keepLine, keepY = d.lateLine, d.lateY
 	}
@@ -206,7 +228,9 @@ func (a *app) editorView(c *ui.Context, d *editor) {
 	}
 	reloaded := d.reloaded != nil
 	areaY := float32(-1) // the offset the area is to keep, when not this frame's
-	if r := d.reloaded; r != nil {
+	if r := d.reloaded; r != nil && placed {
+		d.reloaded = nil // the line at the top moved with the reload's edit
+	} else if r != nil {
 		// The line at the top, found where the lines were before, stays at
 		// the top, below the lines the reload added or took above it.
 		d.reloaded = nil
@@ -372,7 +396,7 @@ func (a *app) editorView(c *ui.Context, d *editor) {
 		}
 		// Show the caret's line before the area takes the offset, so that
 		// it finds the caret in view and leaves the offset be.
-		d.sticky = append(d.sticky[:0], a.scrollToCaret(d, g, snap, caret, view.H, center, jump || caretMoved || edited && follows && !quiet)...)
+		d.sticky = append(d.sticky[:0], a.scrollToCaret(d, g, snap, caret, view.H, a.findCovers(c, d, view), center, jump || caretMoved || edited && follows && !quiet)...)
 		var sticky []stickyRow
 		if len(d.sticky) > 0 {
 			sticky = d.stuck.rows(a, d, snap, d.sticky)
@@ -381,6 +405,12 @@ func (a *app) editorView(c *ui.Context, d *editor) {
 		// The lines in view.
 		first, last := a.linesInView(g, d.vscroll.Y, view.H)
 		contentW := view.W
+		if !wrap && edited && d.widestVersion != snap.Version() && snap.ByteLen() <= widestWhole {
+			// The longest line may be gone, and the area as wide as it with
+			// it: measured anew, the text scrolls sideways no further than
+			// its lines go.
+			d.measureWidest()
+		}
 		if m := &d.measured; !wrap && (m.version != snap.Version() || m.first != first || m.last != last) {
 			m.version, m.first, m.last = snap.Version(), first, last
 			for i := first; i <= last; i++ {
@@ -842,13 +872,14 @@ func blank(s string) bool {
 
 // scrollToCaret scrolls the editor to show the caret's row, below the
 // lines that stick at the top, and returns those lines. jump brings a row
-// out of view a third of the way down, as going to a line does; reveal
+// out of view, or under the covered rows at the top, as the find widget
+// covers, a third of the way down, as going to a line does; reveal
 // scrolls as little as it takes, as the caret moves and as an edit, an
 // undo among them, selects.
 //
 // It runs before the text area takes the offset, which would otherwise
 // scroll to the caret itself, under the lines that stick.
-func (a *app) scrollToCaret(d *editor, g geometry, snap ui.TextSnapshot, caret int, viewH float32, jump, reveal bool) []int {
+func (a *app) scrollToCaret(d *editor, g geometry, snap ui.TextSnapshot, caret int, viewH, covered float32, jump, reveal bool) []int {
 	lineH := a.font.lineH
 	sticky := a.stickyAt(d, g, snap, viewH)
 	if viewH <= 0 || !jump && !reveal {
@@ -861,7 +892,7 @@ func (a *app) scrollToCaret(d *editor, g geometry, snap ui.TextSnapshot, caret i
 	top := editorPadY + g.top(line) + float32(g.row(line, caret-s))*lineH // in the content
 	if jump {
 		stuck := float32(len(sticky)) * lineH
-		if top < d.vscroll.Y+stuck || top+lineH > d.vscroll.Y+viewH-lineH {
+		if top < d.vscroll.Y+max(stuck, covered) || top+lineH > d.vscroll.Y+viewH-lineH {
 			d.vscroll.Y = clamp(top-viewH/3, 0, end)
 			sticky = a.stickyAt(d, g, snap, viewH)
 		}
@@ -882,6 +913,18 @@ func (a *app) scrollToCaret(d *editor, g geometry, snap ui.TextSnapshot, caret i
 		sticky = a.stickyAt(d, g, snap, viewH)
 	}
 	return sticky
+}
+
+// findCovers returns how far down the find widget covers an editor in
+// view, 0 when it shows elsewhere or not at all.
+func (a *app) findCovers(c *ui.Context, d *editor, view ui.Rect) float32 {
+	if !a.find.open || d.areaCol == nil || d.areaCol != a.findCol {
+		return 0
+	}
+	if b := a.find.box.Bounds(c); b.H > 0 {
+		return max(0, b.Y+b.H-view.Y)
+	}
+	return 4 + 2*a.font.lineH // not laid out yet: about a row of it
 }
 
 // stickyAt returns the lines that stick at the top of the editor where it

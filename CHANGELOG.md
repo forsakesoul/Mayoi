@@ -23,6 +23,10 @@ needs a `## <version>` section here, or its build fails.
 - With word wrap on, Enter, Tab, undo and redo no longer move the text around the screen.
 - Pressing Enter or moving a line at the edge of the editor scrolls one line, not a third of the page.
 - Clicking or holding near the right edge of a long line no longer runs the text sideways.
+- Find scrolls a match at the top of the editor out from under the find bar.
+- Deleting the longest line shrinks how far the editor scrolls sideways.
+- A tab you switch back to shows the same lines after edits in another column added lines above them.
+- With word wrap on, moving a tab to another column keeps the same lines in view.
 
 ## 0.15.0
 

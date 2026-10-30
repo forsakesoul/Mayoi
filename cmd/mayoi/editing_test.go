@@ -889,3 +889,20 @@ func TestClickAtTheRightEdgeLeavesTheText(t *testing.T) {
 	tt.Release(x+30, y)
 	hs.settle()
 }
+
+// TestDeletedLongLineNarrowsTheText: once the longest line is gone, the
+// text scrolls sideways no further than the lines left.
+func TestDeletedLongLineNarrowsTheText(t *testing.T) {
+	hs, d := editHarness(t, "a.txt", "short\n")
+	long := strings.Repeat("x", 600) + "\n"
+	d.cmds = append(d.cmds, func(d *editor) { d.edit([2]int{0, 0}, textEdit{0, 0, long}) })
+	hs.settle()
+	if d.hscroll.MaxX <= 0 {
+		t.Fatalf("a line of 600 scrolls no further than %v", d.hscroll.MaxX)
+	}
+	d.cmds = append(d.cmds, func(d *editor) { d.edit([2]int{0, 0}, textEdit{0, len(long), ""}) })
+	hs.settle()
+	if d.hscroll.MaxX > 0 {
+		t.Errorf("without the long line the text still scrolls %v sideways", d.hscroll.MaxX)
+	}
+}

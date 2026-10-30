@@ -1013,7 +1013,7 @@ func (a *app) restoreEditor(ed *editor, ts settings.Tab) {
 	ed.caret = ed.sel[1]
 	ed.vscroll.Y, ed.hscroll.X = ts.ScrollY, ts.ScrollX
 	if ed.hidden {
-		ed.hiddenY = ts.ScrollY
+		ed.hiddenY, ed.hiddenPlaced = ts.ScrollY, false
 	}
 	if ts.Wrap != nil {
 		w := *ts.Wrap
