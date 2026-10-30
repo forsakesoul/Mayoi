@@ -145,12 +145,16 @@ func (f codeFont) gutterWidth(n int) float32 {
 // not wrap, and then on its rows (wrapRows).
 func (a *app) editorView(c *ui.Context, d *editor) {
 	p, f := a.pal, a.font
-	kept := false
+	kept, placed := false, false
 	switch {
 	case d.hidden:
 		// Back in sight, where it was. A text area kept all along is where
 		// it was too, unless the text changed while it was out of sight.
+		// A new one is put back by the line that was at the top: its rows
+		// are estimates, not where the last one laid them out, and the
+		// lines may have moved.
 		kept = d.areaKept && d.buf.Snapshot().Version() == d.version
+		d.hiddenPlaced = !kept && d.hiddenPlaced
 		d.hidden, d.pinFrame, d.resync, d.shownFrame = false, 0, d.resync || !kept, a.frame
 		d.vscroll.Y = d.hiddenY
 	case d.pinFrame != 0 && a.frame > d.pinFrame+1:
@@ -159,6 +163,13 @@ func (a *app) editorView(c *ui.Context, d *editor) {
 		// Every build of the frame after: a frame that animates builds the
 		// view again, after the area laid out where it was put back.
 		d.vscroll.Y = d.pinY
+	}
+	if d.hiddenPlaced {
+		// The new area has no rows until it is laid out, which makes the
+		// offset of the line a guess: the frame after, with the area's
+		// estimates, puts the line back again.
+		placed = a.frame <= d.shownFrame+1
+		d.hiddenPlaced = placed
 	}
 
 	if !a.prefs().Vim {
@@ -173,9 +184,17 @@ func (a *app) editorView(c *ui.Context, d *editor) {
 	// text after. They start from the selection the last frame read, so
 	// they wait for the area's own when it took keys or a click since.
 	keepLine, keepY := -1, float32(0)
+	if placed {
+		snap := d.buf.Snapshot()
+		keepLine, keepY = snap.LineAt(min(d.hiddenAt, snap.Len())), d.hiddenOff
+	}
 	early := len(d.cmds) > 0 && !d.areaInput && d.buf.Snapshot().Version() == d.version
 	if early {
-		keepLine, keepY = a.runCmds(d)
+		// The line kept from out of sight stays, unless the edits scrolled.
+		y0 := d.vscroll.Y
+		if line, y := a.runCmds(d); line >= 0 || !placed || d.vscroll.Y != y0 {
+			keepLine, keepY = line, y
+		}
 	} else if d.lateLine >= 0 {
 		keepLine, keepY = d.lateLine, d.lateY
 	}
@@ -209,7 +228,9 @@ func (a *app) editorView(c *ui.Context, d *editor) {
 	}
 	reloaded := d.reloaded != nil
 	areaY := float32(-1) // the offset the area is to keep, when not this frame's
-	if r := d.reloaded; r != nil {
+	if r := d.reloaded; r != nil && placed {
+		d.reloaded = nil // the line at the top moved with the reload's edit
+	} else if r != nil {
 		// The line at the top, found where the lines were before, stays at
 		// the top, below the lines the reload added or took above it.
 		d.reloaded = nil

@@ -167,9 +167,16 @@ type editor struct {
 	// the area scrolls to its caret when its text changes under it.
 	parked int
 	// hidden is set while another tab shows in the editor's place, and
-	// hiddenY is where it was scrolled then.
-	hidden  bool
-	hiddenY float32
+	// hiddenY is where it was scrolled then. hiddenAt is the start of the
+	// line at the top then, which moves with the edits made since, and
+	// hiddenOff where that line showed, which a new text area, whose
+	// rows' heights are estimates, puts it back at; hiddenPlaced tells
+	// they are known, unlike for a tab restored out of sight.
+	hidden       bool
+	hiddenY      float32
+	hiddenAt     int
+	hiddenOff    float32
+	hiddenPlaced bool
 	// focusNext repeats a focus request after a hidden editor is built again.
 	focusNext bool
 	// pressing is set while a pointer button pressed on the text is down.

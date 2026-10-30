@@ -128,8 +128,9 @@ func TestHiddenTabStaysWhereItIsScrolled(t *testing.T) {
 	hs.settle()
 	a.activate(a.cols[0], 0, false)
 	hs.settle()
-	if left.vscroll.Y != 6000 {
-		t.Fatalf("back at %v", left.vscroll.Y)
+	// On the text it showed, below the line typed above it.
+	if want := 6000 + a.font.lineH; left.vscroll.Y != want {
+		t.Fatalf("back at %v, not %v", left.vscroll.Y, want)
 	}
 }
 
@@ -856,4 +857,90 @@ func TestHiddenTabsKeptAreTheLastShown(t *testing.T) {
 		}
 	}
 	t.Fatalf("back at %v", d.vscroll.Y)
+}
+
+// TestWrappedTabComesBackToItsLine: a wrapped tab that comes back with a
+// new text area, as its text changed out of sight or it kept none, shows
+// the line it showed at the top, where it showed, not the lines that the
+// offset it was scrolled to finds over the new area's estimates.
+func TestWrappedTabComesBackToItsLine(t *testing.T) {
+	for _, edited := range []bool{false, true} {
+		hs, left, right := splitHarness(t, func(hs *harness) string { return hs.proseFile("prose.txt") })
+		a := hs.a
+		a.settings.WordWrap = true
+		col := a.cols[0]
+		left.vscroll.Focus()
+		hs.settle()
+		left.vscroll.Y = 9000
+		hs.settle()
+		topLine := func() (string, float32) {
+			snap := left.buf.Snapshot()
+			g := a.geometry(left, snap.LineCount())
+			top := g.at(left.vscroll.Y - editorPadY)
+			s, e := snap.LineRange(top)
+			return snap.Slice(s, e), editorPadY + g.top(top) - left.vscroll.Y
+		}
+		want, wantY := topLine()
+		if edited {
+			a.openFile(hs.path("README.md"), true)
+			hs.settle()
+			right.vscroll.Focus()
+			hs.settle()
+			right.edit([2]int{0, 0}, textEdit{0, 0, "new\n"})
+			hs.settle()
+		} else {
+			for i := range keepTabs + 1 {
+				p := hs.path(fmt.Sprintf("t%02d.txt", i))
+				os.WriteFile(p, []byte("tab\n"), 0o644)
+				a.openFileIn(col, len(col.tabs), p, false)
+				a.activate(col, len(col.tabs)-1, false)
+				hs.settle()
+			}
+		}
+		a.activate(col, 0, true)
+		// The first frame may be covered as its area scrolls to the caret.
+		step(hs.tt)
+		for i := 1; i < 4; i++ {
+			step(hs.tt)
+			if got, y := topLine(); got != want || y < wantY-1 || y > wantY+1 {
+				t.Errorf("edited %v: frame %d shows %.20q at %v on top", edited, i, got, y)
+			}
+		}
+		hs.settle()
+		if got, y := topLine(); got != want || y < wantY-1 || y > wantY+1 {
+			t.Errorf("edited %v: back with %.20q at %v on top, not %.20q at %v", edited, got, y, want, wantY)
+		}
+	}
+}
+
+// TestWrappedTabMovesWithItsLine: a wrapped tab moved to another column
+// shows the line it showed at the top there, from the first frame.
+func TestWrappedTabMovesWithItsLine(t *testing.T) {
+	hs := newHarness(t, true)
+	a := hs.a
+	a.settings.WordWrap = true
+	a.openFile(hs.proseFile("prose.txt"), true)
+	a.openFile(hs.path("README.md"), true)
+	a.activate(a.column(), 0, true)
+	hs.settle()
+	d := a.activeEditor()
+	d.vscroll.Y = 9000
+	hs.settle()
+	topLine := func() string {
+		snap := d.buf.Snapshot()
+		g := a.geometry(d, snap.LineCount())
+		s, e := snap.LineRange(g.at(d.vscroll.Y - editorPadY))
+		return snap.Slice(s, e)
+	}
+	want := topLine()
+	a.run("view.moveTabNext")
+	for i := range 3 {
+		step(hs.tt)
+		if got := topLine(); got != want {
+			t.Fatalf("frame %d shows %.20q on top, not %.20q", i, got, want)
+		}
+	}
+	if len(a.cols) != 2 || a.cols[1].tab().ed != d {
+		t.Fatal("the tab did not move")
+	}
 }

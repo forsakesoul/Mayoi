@@ -609,6 +609,11 @@ func (a *app) columnView(c *ui.Context, col *column) {
 					}
 				default:
 					shown.ed.areaKept = shown.ed.areaShown(a, col)
+					if ed := shown.ed; !ed.areaKept && ed.areaCol != nil && ed.areaCol != col {
+						// Moved to another column, it gets a new text area: it
+						// comes back to its place as a tab shown again does.
+						a.hideEditor(ed)
+					}
 					shown.ed.areaCol, shown.ed.areaBuild, shown.ed.seenBuild = col, a.builds, a.builds
 					a.editorView(c, shown.ed)
 					a.hunkPeekView(c, shown.ed)
@@ -661,6 +666,14 @@ func (a *app) keepEditors(c *ui.Context, col *column, shown *colTab) {
 func (a *app) hideEditor(d *editor) {
 	if !d.hidden {
 		d.hidden, d.hiddenY = true, d.vscroll.Y
+		if d.areaCol == nil {
+			return // never shown: no area laid its lines out
+		}
+		snap := d.buf.Snapshot()
+		g := a.geometry(d, snap.LineCount())
+		top := g.at(d.vscroll.Y - editorPadY)
+		d.hiddenAt, _ = snap.LineRange(top)
+		d.hiddenOff, d.hiddenPlaced = editorPadY+g.top(top)-d.vscroll.Y, true
 	}
 }
 

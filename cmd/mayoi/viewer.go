@@ -616,7 +616,7 @@ func (a *app) setPreview(d *editor, on bool) {
 			// The text opens where the preview was.
 			y := a.textY(d, m.sync.top)
 			if d.hidden {
-				d.hiddenY = y
+				d.hiddenY, d.hiddenPlaced = y, false
 			} else {
 				d.vscroll.Y = y
 			}
