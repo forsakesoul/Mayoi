@@ -5,6 +5,13 @@ needs a `## <version>` section here, or its build fails.
 
 ## Unreleased
 
+- **Mayoi → Settings…** (⌘,) opens a settings window with every preference by category, and a search.
+- Changes in the settings window apply to every window at once, and each one resets with one click.
+- **File → Keyboard Shortcuts…** lists every command's keys; click one and press its new keys to change them.
+- The shortcuts editor warns when other commands use the keys, and keeps the comments of `keybindings.json`.
+- A folder can set preferences such as `vim` or `autoSave` for itself in `.mayoi/settings.json`.
+- Pick a folder at the top of the settings window to change its own settings rather than yours.
+- `settings.json` and `keybindings.json` still open as files from **File → Open Settings (JSON)** and the like.
 - Headings in the Markdown preview take the color theme's heading color, as the editor does.
 - Command-clicking a terminal path or URL followed by Chinese punctuation no longer takes the text after it.
 - Switching back to a tab no longer flashes a blank editor for a frame before its text shows.

@@ -684,15 +684,27 @@ again with its tabs, columns and Explorer as they were. Closing the last window 
 
 ## Settings
 
-**File → Open Settings** (⌘,) opens `settings.json` in a tab. Saving it applies its preferences in every window at once:
-the code's and the terminal's fonts, weight, ligatures and line height, the theme and appearance, auto save, word wrap,
-the diff layout, vim and more. Mayoi keeps the windows, tabs, recent folders and layout itself, in `state.json` beside
-it. See [SETTINGS.md](SETTINGS.md) for every key and where the files are.
+**Mayoi → Settings…** (⌘,), or **File → Settings…** on Windows and Linux, opens the settings window: every preference
+by category, with search, a mark on those changed from their defaults and a button to reset each. A change applies in
+every window at once: the code's and the terminal's fonts, weight, ligatures and line height, the theme and appearance,
+auto save, word wrap, the diff layout, vim and more.
+
+**File → Open Settings (JSON)** opens `settings.json` in a tab instead. Saving it applies it the same way. Mayoi keeps
+the windows, tabs, recent folders and layout itself, in `state.json` beside it. See [SETTINGS.md](SETTINGS.md) for
+every key and where the files are.
+
+A folder can set some preferences for itself, such as `vim` or `autoSave`, in `.mayoi/settings.json`. Choose the folder
+at the top right of the settings window, or use **File → Open Folder Settings (JSON)**. See
+[Folder settings](SETTINGS.md#folder-settings).
 
 ## Keyboard shortcuts
 
-**File → Open Keyboard Shortcuts** opens `keybindings.json`, in VS Code's format, so a VS Code or Cursor file can be
-pasted in. Saving it applies it in every window at once. It binds keys and chords to Mayoi's commands or VS Code's
+**File → Keyboard Shortcuts…** lists every command with its keys in the settings window. Search by name or by pressing
+keys, click a command and press its new keys, and see which other commands already use them. Each change goes to
+`keybindings.json` at once, keeping its comments.
+
+**File → Open Keyboard Shortcuts (JSON)** opens `keybindings.json`, in VS Code's format, so a VS Code or Cursor file can
+be pasted in. Saving it applies it in every window at once. It binds keys and chords to Mayoi's commands or VS Code's
 names for them, with `when` conditions. See [SETTINGS.md](SETTINGS.md#keybindingsjson) for the format, and for the
 shortcuts that differ on Windows and Linux.
 

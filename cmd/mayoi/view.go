@@ -971,7 +971,7 @@ func (a *app) statusFit(c *ui.Context, width float32) statusVisibility {
 		snap := d.buf.Snapshot()
 		n := snap.LineCount()
 		used += measure(locales.StatusPos(n, 999), false)
-		if a.settings.Vim {
+		if a.prefs().Vim {
 			// The mode's badge, and the keys typed after it.
 			used += measure(d.vim.mode.String(), false) + 2*6
 			if k := d.vim.pending(); k != "" {
@@ -1260,7 +1260,7 @@ func (a *app) statusBar(c *ui.Context) {
 		}
 		snap := d.buf.Snapshot()
 		caret := min(d.caret, snap.Len())
-		if a.settings.Vim && d.vim.mode.visual() {
+		if a.prefs().Vim && d.vim.mode.visual() {
 			caret = vimCursor(d, snap)
 		}
 		line := snap.LineAt(caret)
@@ -1269,7 +1269,7 @@ func (a *app) statusBar(c *ui.Context) {
 		if n := abs(d.sel[1] - d.sel[0]); n > 0 {
 			pos += locales.StatusSelected(n)
 		}
-		if a.settings.Vim {
+		if a.prefs().Vim {
 			a.vimBadge(c, &d.vim, text)
 		}
 		item("pos", pos, a.withKey(locales.GoToLineLabel(), "go.line"), nil, func() { a.openQuick(":") })

@@ -12,6 +12,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"mayoi/internal/keymap"
+	"mayoi/internal/remote"
 	"mayoi/internal/settings"
 	"mayoi/locales"
 )
@@ -45,8 +46,11 @@ func (a *app) commandsIn(t locales.Messages) []command {
 		{"file.saveAs", t.CmdFileSaveAs(), "Shift+CmdOrCtrl+S", a.saveActiveAs},
 		{"file.saveAll", t.CmdFileSaveAll(), "Alt+CmdOrCtrl+S", a.saveAll},
 		{"file.autoSave", t.CmdFileAutoSave(), "", a.toggleAutoSave},
-		{"file.settings", t.CmdFileSettings(), "CmdOrCtrl+,", a.openSettings},
-		{"file.keybindings", t.CmdFileKeybindings(), "", a.openKeybindings},
+		{"file.settings", t.CmdFileSettings(), "CmdOrCtrl+,", func() { a.host.showSettings("", "") }},
+		{"file.settingsJSON", t.CmdFileSettingsJSON(), "", a.openSettings},
+		{"file.keybindings", t.CmdFileKeybindings(), "", func() { a.host.showSettings(prefsShortcuts, "") }},
+		{"file.keybindingsJSON", t.CmdFileKeybindingsJSON(), "", a.openKeybindings},
+		{"file.folderSettings", t.CmdFileFolderSettings(), "", a.openFolderSettings},
 		{"file.copyPath", t.CmdFileCopyPath(), "", func() { a.copyActivePath(false) }},
 		{"file.copyRelativePath", t.CmdFileCopyRelativePath(), "", func() { a.copyActivePath(true) }},
 		{"file.reveal", revealActiveLabel(t), "", a.revealActive},
@@ -492,7 +496,15 @@ func (a *app) menu(cli bool, run func(id string, win *mygo.Window)) *mygo.Menu {
 		}})
 	}
 	file = append(file, mygo.Separator(),
-		item("file.save"), item("file.saveAs"), item("file.saveAll"), checkbox("file.autoSave", a.settings.AutoSave), item("file.settings"), item("file.keybindings"), mygo.Separator(),
+		item("file.save"), item("file.saveAs"), item("file.saveAll"), checkbox("file.autoSave", a.prefs().AutoSave), mygo.Separator(),
+	)
+	if runtime.GOOS != "darwin" {
+		file = append(file, item("file.settings"))
+	}
+	// A folder's own settings are of a folder on this machine.
+	folderSettings := item("file.folderSettings")
+	folderSettings.Disabled = a.root == "" || remote.Is(a.root)
+	file = append(file, item("file.settingsJSON"), item("file.keybindings"), item("file.keybindingsJSON"), folderSettings, mygo.Separator(),
 		item("file.close"), item("file.reopenClosed"), item("file.closeFolder"), item("file.closeProject"),
 	)
 	if cli {
@@ -520,7 +532,7 @@ func (a *app) menu(cli bool, run func(id string, win *mygo.Window)) *mygo.Menu {
 	appMenu := &mygo.MenuItem{Role: mygo.RoleAppMenu}
 	if runtime.GOOS == "darwin" {
 		help = nil
-		appMenu = &mygo.MenuItem{Label: mygo.App.Name(), Submenu: slices.Concat(about, []*mygo.MenuItem{mygo.Separator()}, account, []*mygo.MenuItem{
+		appMenu = &mygo.MenuItem{Label: mygo.App.Name(), Submenu: slices.Concat(about, []*mygo.MenuItem{mygo.Separator(), item("file.settings"), mygo.Separator()}, account, []*mygo.MenuItem{
 			mygo.Separator(),
 			{Role: mygo.RoleServices}, mygo.Separator(),
 			{Role: mygo.RoleHide}, {Role: mygo.RoleHideOthers}, {Role: mygo.RoleUnhide}, mygo.Separator(),
@@ -563,9 +575,9 @@ func (a *app) menu(cli bool, run func(id string, win *mygo.Window)) *mygo.Menu {
 		}},
 		{Label: locales.MenuView(), Submenu: []*mygo.MenuItem{
 			item("view.sidebar"), checkbox("view.sidebarRight", a.settings.SidebarRight), item("view.explorer"), item("view.search"), item("view.scm"), mygo.Separator(),
-			checkbox("view.wordWrap", a.settings.WordWrap), item("view.wordWrapTab"), item("view.togglePreview"), item("view.previewToSide"),
-			checkbox("view.markdownPreview", a.settings.MarkdownPreview), mygo.Separator(),
-			checkbox("view.vim", a.settings.Vim), checkbox("view.projectTabs", a.settings.ProjectTabs), mygo.Separator(),
+			checkbox("view.wordWrap", a.prefs().WordWrap), item("view.wordWrapTab"), item("view.togglePreview"), item("view.previewToSide"),
+			checkbox("view.markdownPreview", a.prefs().MarkdownPreview), mygo.Separator(),
+			checkbox("view.vim", a.prefs().Vim), checkbox("view.projectTabs", a.settings.ProjectTabs), mygo.Separator(),
 			item("view.splitRight"), item("view.nextColumn"), item("view.prevColumn"),
 			item("view.moveTabNext"), item("view.moveTabPrev"), mygo.Separator(),
 			item("view.terminal"), item("view.newTerminal"), item("view.terminalTab"), item("view.terminalMove"), installHC,
@@ -600,7 +612,7 @@ func (a *app) menu(cli bool, run func(id string, win *mygo.Window)) *mygo.Menu {
 			item("git.switchBranch"), item("git.createBranch"), item("git.fetch"), item("git.pull"), item("git.push"), mygo.Separator(),
 			item("git.stash"), item("git.stashUntracked"), item("git.stashes"), mygo.Separator(),
 			prItem("git.openPullRequest"), prItem("git.showPullRequestChecks"), mygo.Separator(),
-			checkbox("git.blame", a.settings.Blame), item("git.openFileOnRemote"), item("git.copyPermalink"), item("git.refresh"), mygo.Separator(),
+			checkbox("git.blame", a.prefs().Blame), item("git.openFileOnRemote"), item("git.copyPermalink"), item("git.refresh"), mygo.Separator(),
 			item("review.comment"), reviewItem("review.next"), reviewItem("review.previous"),
 			reviewItem("review.copy"), reviewItem("review.send"), reviewItem("review.clear"),
 		}},
