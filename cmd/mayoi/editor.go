@@ -372,7 +372,7 @@ func (a *app) editorView(c *ui.Context, d *editor) {
 		}
 		// Show the caret's line before the area takes the offset, so that
 		// it finds the caret in view and leaves the offset be.
-		d.sticky = append(d.sticky[:0], a.scrollToCaret(d, g, snap, caret, view.H, center, jump || caretMoved || edited && follows && !quiet)...)
+		d.sticky = append(d.sticky[:0], a.scrollToCaret(d, g, snap, caret, view.H, a.findCovers(c, d, view), center, jump || caretMoved || edited && follows && !quiet)...)
 		var sticky []stickyRow
 		if len(d.sticky) > 0 {
 			sticky = d.stuck.rows(a, d, snap, d.sticky)
@@ -842,13 +842,14 @@ func blank(s string) bool {
 
 // scrollToCaret scrolls the editor to show the caret's row, below the
 // lines that stick at the top, and returns those lines. jump brings a row
-// out of view a third of the way down, as going to a line does; reveal
+// out of view, or under the covered rows at the top, as the find widget
+// covers, a third of the way down, as going to a line does; reveal
 // scrolls as little as it takes, as the caret moves and as an edit, an
 // undo among them, selects.
 //
 // It runs before the text area takes the offset, which would otherwise
 // scroll to the caret itself, under the lines that stick.
-func (a *app) scrollToCaret(d *editor, g geometry, snap ui.TextSnapshot, caret int, viewH float32, jump, reveal bool) []int {
+func (a *app) scrollToCaret(d *editor, g geometry, snap ui.TextSnapshot, caret int, viewH, covered float32, jump, reveal bool) []int {
 	lineH := a.font.lineH
 	sticky := a.stickyAt(d, g, snap, viewH)
 	if viewH <= 0 || !jump && !reveal {
@@ -861,7 +862,7 @@ func (a *app) scrollToCaret(d *editor, g geometry, snap ui.TextSnapshot, caret i
 	top := editorPadY + g.top(line) + float32(g.row(line, caret-s))*lineH // in the content
 	if jump {
 		stuck := float32(len(sticky)) * lineH
-		if top < d.vscroll.Y+stuck || top+lineH > d.vscroll.Y+viewH-lineH {
+		if top < d.vscroll.Y+max(stuck, covered) || top+lineH > d.vscroll.Y+viewH-lineH {
 			d.vscroll.Y = clamp(top-viewH/3, 0, end)
 			sticky = a.stickyAt(d, g, snap, viewH)
 		}
@@ -882,6 +883,18 @@ func (a *app) scrollToCaret(d *editor, g geometry, snap ui.TextSnapshot, caret i
 		sticky = a.stickyAt(d, g, snap, viewH)
 	}
 	return sticky
+}
+
+// findCovers returns how far down the find widget covers an editor in
+// view, 0 when it shows elsewhere or not at all.
+func (a *app) findCovers(c *ui.Context, d *editor, view ui.Rect) float32 {
+	if !a.find.open || d.areaCol == nil || d.areaCol != a.findCol {
+		return 0
+	}
+	if b := a.find.box.Bounds(c); b.H > 0 {
+		return max(0, b.Y+b.H-view.Y)
+	}
+	return 4 + 2*a.font.lineH // not laid out yet: about a row of it
 }
 
 // stickyAt returns the lines that stick at the top of the editor where it
