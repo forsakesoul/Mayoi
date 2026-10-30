@@ -158,7 +158,7 @@ func (a *app) editorView(c *ui.Context, d *editor) {
 		d.vscroll.Y = d.pinY
 	}
 
-	if !a.settings.Vim {
+	if !a.prefs().Vim {
 		vimReset(d)
 		if a.vimLine.d == d {
 			a.vimCloseLine(false)
@@ -197,7 +197,7 @@ func (a *app) editorView(c *ui.Context, d *editor) {
 	textX := gutterW + gutterGap
 	// Vim's normal and visual modes take the keys as commands: the area
 	// types nothing, and shows a block for its caret.
-	vimKeys := a.settings.Vim && d.vim.mode != vimInsert
+	vimKeys := a.prefs().Vim && d.vim.mode != vimInsert
 	focused := d.vscroll.Focused(c)
 	g := a.geometry(d, lines)
 	wrap := g.lines != nil

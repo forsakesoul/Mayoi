@@ -71,6 +71,10 @@ type host interface {
 	// they change.
 	recentChanged()
 	menuChanged()
+	// showSettings opens the settings window, or brings it to the front,
+	// at section, a category of the preferences or "shortcuts", and at
+	// the preference of key when it is not "", for the window's folder.
+	showSettings(section, key string)
 	// redrawWindows draws every window with the current font and zoom.
 	redrawWindows()
 	// installCLI and uninstallCLI put the mayoi command on the shell's
@@ -122,6 +126,9 @@ type host interface {
 type app struct {
 	host     host
 	settings *settings.Settings
+	// folderPrefs is what the folder chooses of the preferences, nil
+	// without a folder.
+	folderPrefs *folderPrefs
 	// window is what the settings keep of this window.
 	window *settings.Window
 
@@ -490,6 +497,7 @@ func (a *app) openFolder(dir string) {
 	}
 	a.root = dir
 	a.attachRemote(dir)
+	a.loadFolderPrefs(dir)
 	a.tree = workspace.NewTree(dir, a.post)
 	a.tree.OnChange = a.diskChanged
 	a.tree.IsOpen = a.files.Open.Has
@@ -548,6 +556,7 @@ func (a *app) closeFolder() {
 			a.tree.Close()
 		}
 		a.detachRemote()
+		a.dropFolderPrefs()
 		a.resetRepositories()
 		a.root, a.tree, a.index, a.git = "", nil, nil, gitState{}
 		a.resetSearch()

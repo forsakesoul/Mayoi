@@ -10,6 +10,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"mayoi/internal/highlight"
+	"mayoi/internal/settings"
 )
 
 // palette is Mayoi's look: the colors of its chrome, of the code and of
@@ -1153,16 +1154,20 @@ func contrast(x, y ui.Color) float64 {
 
 // applyTheme sets the window's theme from the palette of its theme,
 // and returns that palette.
-func (a *app) applyTheme(c *ui.Context) *palette {
+func (a *app) applyTheme(c *ui.Context) *palette { return applyTheme(c, &a.settings.Prefs, &a.fade) }
+
+// applyTheme sets the theme of a window from the palette of the theme of
+// the preferences, on its way there by fade, and returns that palette.
+func applyTheme(c *ui.Context, prefs *settings.Prefs, fade *paletteFade) *palette {
 	t := *c.Theme()
 	dark := t.Dark
-	switch a.settings.Appearance {
+	switch prefs.Appearance {
 	case "light":
 		dark = false
 	case "dark":
 		dark = true
 	}
-	p := a.fade.step(c, paletteFor(a.settings.Theme, dark))
+	p := fade.step(c, paletteFor(prefs.Theme, dark))
 	t.Dark = p.dark
 	t.Background = p.editor
 	// Every state of the accent, or a hovered button would turn the
@@ -1182,7 +1187,7 @@ func (a *app) applyTheme(c *ui.Context) *palette {
 	t.Scrollbar = p.scrollbar
 	t.Inverse, t.InverseText = p.inverse, p.inverseText
 	if p.mono {
-		t.Font = a.settings.FontFamily
+		t.Font = prefs.FontFamily
 	}
 	c.SetTheme(&t)
 	return p

@@ -305,7 +305,7 @@ func (a *app) openFileIn(col *column, at int, path string, focus bool) {
 	t := &colTab{ed: newEditor(doc), transient: a.opening}
 	a.addTab(col, at, t)
 	a.activate(col, at, focus)
-	if a.settings.MarkdownPreview && !a.openingText && isMarkdown(t.ed.document) {
+	if a.prefs().MarkdownPreview && !a.openingText && isMarkdown(t.ed.document) {
 		a.setPreview(t.ed, true)
 	}
 }
