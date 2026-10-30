@@ -742,6 +742,67 @@ func TestSelectAllLeavesTheView(t *testing.T) {
 	}
 }
 
+// A line added or moved at an edge of the view scrolls it as little as
+// it takes, rather than a third of the way down.
+func TestEditsAtTheEdgeScrollALine(t *testing.T) {
+	hs := newHarness(t, true)
+	a, tt := hs.a, hs.tt
+	a.openFile(hs.longFile("long.go", 400), true)
+	hs.settle()
+	d := a.activeEditor()
+	box, ok := tt.Find("Editor long.go")
+	if !ok {
+		t.Fatal("no editor")
+	}
+	caretY := func() float32 {
+		r, _ := tt.TextCaret()
+		return r.Y
+	}
+	for caretY()+2*a.font.lineH <= box.Y+box.H {
+		tt.Key(0, ui.KeyDown)
+		hs.settle()
+	}
+	bottom := caretY()
+	for _, key := range []struct {
+		name string
+		mods ui.Modifiers
+		key  ui.Key
+	}{
+		{"Enter", 0, ui.KeyEnter},
+		{"Enter", 0, ui.KeyEnter},
+		{"move line down", ui.Alt, ui.KeyDown},
+		{"copy line down", ui.Alt | ui.Shift, ui.KeyDown},
+	} {
+		y := d.vscroll.Y
+		tt.Key(key.mods, key.key)
+		hs.settle()
+		if got := caretY(); got < bottom-2 || d.vscroll.Y-y > 2*a.font.lineH {
+			t.Errorf("%s at the bottom: caret at y %v, scrolled from %v to %v", key.name, got, y, d.vscroll.Y)
+		}
+	}
+
+	d.vscroll.Y = 2000
+	hs.settle()
+	s, _ := d.buf.Snapshot().LineRange(101)
+	hs.place(d, s, s)
+	for range 4 {
+		y := d.vscroll.Y
+		tt.Key(ui.Alt, ui.KeyUp)
+		hs.settle()
+		if got := caretY(); got > box.Y+3*a.font.lineH || y-d.vscroll.Y > 2*a.font.lineH {
+			t.Errorf("move line up at the top: caret at y %v, scrolled from %v to %v", got, y, d.vscroll.Y)
+		}
+	}
+
+	// An undo from far away still lands well into the view.
+	far, _ := d.buf.Snapshot().LineRange(1500)
+	d.selectRange(far, far, false)
+	hs.settle()
+	if got := caretY(); got < box.Y+box.H/4 || got > box.Y+box.H/2 {
+		t.Errorf("a selection from far away shows at y %v in %+v", got, box)
+	}
+}
+
 // Edits the app makes, which have the text area forget the heights of its
 // rows, leave the lines where they show while the lines wrap.
 func TestWrappedEditsKeepTheCaretOnScreen(t *testing.T) {

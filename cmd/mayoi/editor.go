@@ -15,6 +15,7 @@ import (
 )
 
 const (
+	nearRows   = 3 // how far past an edge of the view an edit scrolls as little as it takes
 	tabWidth   = 4
 	editorPadY = 8  // above the first line
 	gutterGap  = 10 // between the line numbers and the text
@@ -266,8 +267,9 @@ func (a *app) editorView(c *ui.Context, d *editor) {
 		quiet := d.pending != nil && d.quiet
 		jump := d.pending != nil && !quiet
 		// A jump asked for goes a third of the way down from an edge of
-		// the view too; an edit's selection only from out of view.
-		center := jump && (d.center || !a.inView(d, g, snap, d.pending[1], view.H))
+		// the view too; an edit's selection only from well out of view: a
+		// line typed at the edge scrolls the view a line.
+		center := jump && (d.center || !a.nearView(d, g, snap, d.pending[1], view.H))
 		// Select All by the area's own: it does not scroll to the caret, at
 		// the end of the text, as a selection it is given does for a frame.
 		whole := false
@@ -904,6 +906,13 @@ func (a *app) setSelection(d *editor, area ui.Element) {
 func (a *app) inView(d *editor, g geometry, snap ui.TextSnapshot, at int, viewH float32) bool {
 	top := editorPadY + g.top(snap.LineAt(min(at, snap.Len())))
 	return top >= d.vscroll.Y && top+a.font.lineH <= d.vscroll.Y+viewH
+}
+
+// nearView reports whether the first row of the line of offset at is in a
+// view viewH high, where the editor is scrolled, or a few rows past an edge.
+func (a *app) nearView(d *editor, g geometry, snap ui.TextSnapshot, at int, viewH float32) bool {
+	top, slack := editorPadY+g.top(snap.LineAt(min(at, snap.Len()))), nearRows*a.font.lineH
+	return top >= d.vscroll.Y-slack && top+a.font.lineH <= d.vscroll.Y+viewH+slack
 }
 
 // offsetInView returns the start of a line in the middle of the view.

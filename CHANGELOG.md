@@ -14,6 +14,7 @@ needs a `## <version>` section here, or its build fails.
 - With word wrap on, switching back to a tab returns to the same lines, not lines nearby.
 - Switching back to a tab whose caret is out of view no longer flashes a blank editor.
 - With word wrap on, Enter, Tab, undo and redo no longer move the text around the screen.
+- Pressing Enter or moving a line at the edge of the editor scrolls one line, not a third of the page.
 
 ## 0.15.0
 
