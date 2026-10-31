@@ -348,6 +348,35 @@ func TestWorktreeBoxPathOnlyCreates(t *testing.T) {
 	}
 }
 
+// Enter switches to a worktree whose folder has the query as typed, and
+// creates for a new name that matches a worktree only by scattered letters.
+func TestWorktreeBoxScatteredMatchCreates(t *testing.T) {
+	hs, run, side := worktreeFixture(t)
+	a := hs.a
+	openWorktrees(t, hs)
+	hs.tt.Type("sd")
+	hs.settle()
+	if len(a.worktrees.results) == 0 {
+		t.Fatal("setup: sd matches no worktree")
+	}
+	hs.tt.Key(0, ui.KeyEnter)
+	hs.settleGit()
+	if !slices.Contains(strings.Fields(run("branch", "--format=%(refname:short)")), "sd") {
+		t.Fatal("Enter on sd did not create branch sd")
+	}
+	if filepath.Base(a.root) != "sd" {
+		t.Fatalf("window shows %q, want the new worktree sd", a.root)
+	}
+	openWorktrees(t, hs)
+	hs.tt.Type("sid")
+	hs.settle()
+	hs.tt.Key(0, ui.KeyEnter)
+	hs.settle()
+	if got := mustEval(t, a.root); got != mustEval(t, side) {
+		t.Fatalf("Enter on sid shows %q, want the worktree side", got)
+	}
+}
+
 // A local branch that no worktree has checked out is named as one to check
 // out with Switch Branch…, and offers no worktree; a branch a worktree has
 // checked out is not.

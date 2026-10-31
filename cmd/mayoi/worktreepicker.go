@@ -235,9 +235,11 @@ func (a *gitContext) worktreePickerView(c *ui.Context) {
 		w.shown, w.stale, w.sel = w.query, false, 0
 	}
 	choices := a.worktreeChoices()
-	if changed && len(w.results) > 0 && len(choices) > len(w.results) {
-		// Enter keeps switching to the first match; creating is explicit
-		// until the query matches no worktree.
+	if changed && len(w.results) > 0 && len(choices) > len(w.results) &&
+		strings.Contains(strings.ToLower(w.names[w.results[0].Index]), strings.ToLower(strings.TrimSpace(w.query))) {
+		// Enter switches to the first match when its folder or branch has the
+		// query as typed; a new name that only matches scattered letters, as
+		// api does feature-login-page, creates.
 		w.sel = 1
 	}
 	ui.Overlay(c, func() {
